@@ -1,0 +1,38 @@
+import 'package:equatable/equatable.dart';
+
+abstract class Failure extends Equatable {
+  final String message;
+  const Failure({required this.message});
+
+  @override
+  List<Object> get props => [message];
+}
+
+class ServerFailure extends Failure {
+  final int? statusCode;
+  const ServerFailure({required super.message, this.statusCode});
+}
+
+class NetworkFailure extends Failure {
+  const NetworkFailure({super.message = 'No internet connection'});
+}
+
+class AuthFailure extends Failure {
+  const AuthFailure({required super.message});
+}
+
+class CacheFailure extends Failure {
+  const CacheFailure({required super.message});
+}
+
+class ValidationFailure extends Failure {
+  const ValidationFailure({required super.message});
+}
+
+class PermissionFailure extends Failure {
+  const PermissionFailure({required super.message});
+}
+
+class UnknownFailure extends Failure {
+  const UnknownFailure({super.message = 'An unexpected error occurred'});
+}
