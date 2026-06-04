@@ -36,19 +36,16 @@ class DeveloperDashboardScreen extends GetView<DashboardController> {
                     delegate: SliverChildListDelegate([
                       _StatsRow(
                         active: controller.activeProjects.length,
-                        done: 34,
-                        bids: 5,
+                        done: controller.projects
+                            .where((p) => p.status == 'completed')
+                            .length,
+                        workers: controller.projects
+                            .fold(0, (s, p) => s + p.workerCount),
                       ),
                       const SizedBox(height: AppDimensions.xl),
-                      _RevenueCard(
-                        revenue: 4200000,
-                        target: 6200000,
-                        growthPercent: 12,
-                      ),
+                      _PortfolioBudgetCard(projects: controller.projects),
                       const SizedBox(height: AppDimensions.xl),
                       _buildActiveProjectsSection(context),
-                      const SizedBox(height: AppDimensions.xl),
-                      _BidRequestsBanner(count: 5, newCount: 3),
                       const SizedBox(height: AppDimensions.xxxl),
                     ]),
                   ),
@@ -126,12 +123,12 @@ class DeveloperDashboardScreen extends GetView<DashboardController> {
 class _StatsRow extends StatelessWidget {
   final int active;
   final int done;
-  final int bids;
+  final int workers;
 
   const _StatsRow({
     required this.active,
     required this.done,
-    required this.bids,
+    required this.workers,
   });
 
   @override
@@ -158,8 +155,8 @@ class _StatsRow extends StatelessWidget {
           Container(width: 1, height: 40, color: AppColors.dividerLight),
           Expanded(
             child: _StatCell(
-              value: '$bids',
-              label: 'bids'.tr,
+              value: '$workers',
+              label: 'workers'.tr.isEmpty ? 'Workers' : 'Workers',
               color: AppColors.warning,
             ),
           ),
@@ -194,56 +191,33 @@ class _StatCell extends StatelessWidget {
   }
 }
 
-class _RevenueCard extends StatelessWidget {
-  final double revenue;
-  final double target;
-  final int growthPercent;
-
-  const _RevenueCard({
-    required this.revenue,
-    required this.target,
-    required this.growthPercent,
-  });
+class _PortfolioBudgetCard extends StatelessWidget {
+  final List<ProjectModel> projects;
+  const _PortfolioBudgetCard({required this.projects});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final progress = revenue / target;
+    final totalBudget = projects.fold(0.0, (s, p) => s + p.totalBudget);
+    final totalSpent  = projects.fold(0.0, (s, p) => s + p.spentBudget);
+    final progress    = totalBudget > 0 ? totalSpent / totalBudget : 0.0;
+
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'this_month'.tr,
-            style: AppTextStyles.overline(context),
-          ),
-          const SizedBox(height: AppDimensions.xs),
-          Text(
-            'REVENUE',
-            style: AppTextStyles.labelSmall(context),
-          ),
+          Text('PORTFOLIO BUDGET', style: AppTextStyles.overline(context)),
           const SizedBox(height: AppDimensions.xs),
           Row(
             children: [
               Text(
-                CurrencyFormatter.formatCompact(revenue),
+                CurrencyFormatter.formatCompact(totalSpent),
                 style: AppTextStyles.amountLarge(context),
               ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.successLight,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-                ),
-                child: Text(
-                  '▲ $growthPercent%',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.success,
-                  ),
-                ),
+              Text(
+                'of ${CurrencyFormatter.formatCompact(totalBudget)}',
+                style: AppTextStyles.caption(context),
               ),
             ],
           ),
@@ -251,7 +225,7 @@ class _RevenueCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
             child: LinearProgressIndicator(
-              value: progress,
+              value: progress.clamp(0.0, 1.0),
               minHeight: AppDimensions.progressBarHeightLg,
               backgroundColor:
                   isDark ? AppColors.borderDark : AppColors.dividerLight,
@@ -260,7 +234,7 @@ class _RevenueCard extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.xs),
           Text(
-            '${(progress * 100).toStringAsFixed(0)}% of ${CurrencyFormatter.formatCompact(target)} target',
+            '${(progress * 100).toStringAsFixed(0)}% spent across ${projects.length} project${projects.length == 1 ? '' : 's'}',
             style: AppTextStyles.caption(context),
           ),
         ],
@@ -349,49 +323,4 @@ class _ActiveProjectRow extends StatelessWidget {
   }
 }
 
-class _BidRequestsBanner extends StatelessWidget {
-  final int count;
-  final int newCount;
-
-  const _BidRequestsBanner({required this.count, required this.newCount});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.warningLight,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-            ),
-            child: const Icon(
-              Icons.work_outline_rounded,
-              color: AppColors.warning,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: AppDimensions.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$count New Bid Requests',
-                  style: AppTextStyles.h4(context).copyWith(color: AppColors.accent),
-                ),
-                Text(
-                  '$newCount new since last visit',
-                  style: AppTextStyles.caption(context),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondaryLight),
-        ],
-      ),
-    );
-  }
-}
+// _BidRequestsBanner removed — Phase 3 marketplace feature

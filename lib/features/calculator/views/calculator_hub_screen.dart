@@ -1,17 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/calculator_controller.dart';
+import '../controllers/calculator_hub_controller.dart';
+import '../data/models/saved_calculation_model.dart';
+import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/date_formatter.dart';
 import '../../../presentation/theme/app_colors.dart';
 import '../../../presentation/theme/app_dimensions.dart';
 import '../../../presentation/theme/app_text_styles.dart';
 import '../../../presentation/widgets/common/app_card.dart';
 import '../../../presentation/routes/app_routes.dart';
 
-class CalculatorHubScreen extends GetView<CalculatorController> {
+class CalculatorHubScreen extends StatelessWidget {
   const CalculatorHubScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Use CalculatorHubController if available, fall back to legacy
+    CalculatorHubController? hubCtrl;
+    CalculatorController? legacyCtrl;
+    try {
+      hubCtrl = Get.find<CalculatorHubController>();
+    } catch (_) {}
+    try {
+      legacyCtrl = Get.find<CalculatorController>();
+    } catch (_) {}
+
     return Scaffold(
       appBar: AppBar(
         title: Text('cost_calculator'.tr),
@@ -26,11 +40,12 @@ class CalculatorHubScreen extends GetView<CalculatorController> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppDimensions.pagePaddingH),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Tagline
+            // Price freshness banner
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(AppDimensions.base),
+              padding: const EdgeInsets.all(AppDimensions.md),
               decoration: BoxDecoration(
                 color: AppColors.infoLight,
                 borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
@@ -42,12 +57,12 @@ class CalculatorHubScreen extends GetView<CalculatorController> {
                 text: TextSpan(
                   style: AppTextStyles.bodySmall(context),
                   children: [
-                    TextSpan(
+                    const TextSpan(
                       text: 'Plan with confidence. ',
-                      style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary),
+                      style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary),
                     ),
-                    TextSpan(
-                      text: 'Calculate full construction cost before starting — every detail covered.',
+                    const TextSpan(
+                      text: 'Prices updated for Lahore market · June 2026',
                     ),
                   ],
                 ),
@@ -55,105 +70,77 @@ class CalculatorHubScreen extends GetView<CalculatorController> {
             ),
 
             const SizedBox(height: AppDimensions.xl),
-
-            // New calculation CTA
-            AppCard(
-              onTap: () => Get.toNamed(AppRoutes.calculatorForm),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.infoLight,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                    ),
-                    child: const Icon(Icons.calculate_outlined, color: AppColors.primary, size: 22),
-                  ),
-                  const SizedBox(width: AppDimensions.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('start_new_calculation'.tr, style: AppTextStyles.h4(context)),
-                        Text('calculate_from_scratch'.tr, style: AppTextStyles.caption(context)),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondaryLight),
-                ],
-              ),
-            ),
-
+            Text('Calculators', style: AppTextStyles.overline(context)),
             const SizedBox(height: AppDimensions.md),
 
-            // Saved results
-            AppCard(
+            // ── 4 Calculator cards ─────────────────────────────────────────
+            _CalcCard(
+              icon: Icons.home_work_outlined,
+              color: AppColors.primary,
+              bgColor: AppColors.infoLight,
+              title: 'Full House Estimator',
+              subtitle: 'Total cost by area, floors & quality',
+              badge: 'Most Popular',
+              onTap: () => Get.toNamed(AppRoutes.houseEstimator),
+            ),
+            const SizedBox(height: AppDimensions.md),
+
+            _CalcCard(
+              icon: Icons.layers_outlined,
+              color: const Color(0xFF16A34A),
+              bgColor: const Color(0xFFDCFCE7),
+              title: 'Material Calculator',
+              subtitle: 'Cement, steel, bricks, tiles & more',
+              onTap: () => Get.toNamed(AppRoutes.materialCalculator),
+            ),
+            const SizedBox(height: AppDimensions.md),
+
+            _CalcCard(
+              icon: Icons.trending_up_rounded,
+              color: const Color(0xFFF59E0B),
+              bgColor: const Color(0xFFFEF3C7),
+              title: 'What-If Scenarios',
+              subtitle: 'See impact if steel or cement prices rise',
+              onTap: () => Get.toNamed(AppRoutes.whatIfCalculator),
+            ),
+            const SizedBox(height: AppDimensions.md),
+
+            _CalcCard(
+              icon: Icons.folder_outlined,
+              color: const Color(0xFF8B5CF6),
+              bgColor: const Color(0xFFEDE9FE),
+              title: 'Saved Calculations',
+              subtitle: 'View & compare past estimates',
               onTap: () => Get.toNamed(AppRoutes.savedCalculations),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                    ),
-                    child: const Icon(Icons.folder_outlined, color: AppColors.warning, size: 22),
-                  ),
-                  const SizedBox(width: AppDimensions.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('my_saved_results'.tr, style: AppTextStyles.h4(context)),
-                        Text('view_past_calculations'.tr, style: AppTextStyles.caption(context)),
-                      ],
-                    ),
-                  ),
-                  Obx(() => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-                    ),
-                    child: Text(
-                      '${controller.savedCalculations.length}',
-                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
-                    ),
-                  )),
-                  const SizedBox(width: AppDimensions.sm),
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondaryLight),
-                ],
-              ),
+              trailing: legacyCtrl != null
+                  ? Obx(() => _CountBadge('${legacyCtrl!.savedCalculations.length}'))
+                  : null,
             ),
 
             const SizedBox(height: AppDimensions.xl),
-            Text('quick_tools'.tr, style: AppTextStyles.overline(context)),
-            const SizedBox(height: AppDimensions.md),
 
-            // Quick tools grid
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: AppDimensions.md,
-              mainAxisSpacing: AppDimensions.md,
-              childAspectRatio: 1.3,
-              children: const [
-                _QuickTool(icon: Icons.layers_outlined, label: 'Material Estimator', color: Color(0xFF1E3A8A)),
-                _QuickTool(icon: Icons.people_outlined, label: 'Labor Rates', color: Color(0xFF22C55E)),
-                _QuickTool(icon: Icons.bar_chart_rounded, label: 'Stage-wise Budget', color: Color(0xFF8B5CF6)),
-                _QuickTool(icon: Icons.trending_up_rounded, label: 'Price Comparison', color: Color(0xFFEF4444)),
-              ],
-            ),
+            // ── Recent saved ───────────────────────────────────────────────
+            if (legacyCtrl != null) ...[
+              Text('recent_saved'.tr.isEmpty ? 'Recent' : 'Recent',
+                  style: AppTextStyles.overline(context)),
+              const SizedBox(height: AppDimensions.md),
+              Obx(() {
+                final saved = legacyCtrl!.savedCalculations.take(3).toList();
+                if (saved.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  children: saved
+                      .map((c) => _SavedRow(
+                            title: c.name,
+                            city: c.city,
+                            quality: c.quality,
+                            amount: c.totalCost,
+                            date: c.date,
+                          ))
+                      .toList(),
+                );
+              }),
+            ],
 
-            const SizedBox(height: AppDimensions.xl),
-            Text(
-              'Prices last updated · June 2025 · Lahore',
-              style: AppTextStyles.caption(context),
-              textAlign: TextAlign.center,
-            ),
             const SizedBox(height: AppDimensions.xxl),
           ],
         ),
@@ -162,36 +149,146 @@ class CalculatorHubScreen extends GetView<CalculatorController> {
   }
 }
 
-class _QuickTool extends StatelessWidget {
+class _CalcCard extends StatelessWidget {
   final IconData icon;
-  final String label;
   final Color color;
+  final Color bgColor;
+  final String title;
+  final String subtitle;
+  final String? badge;
+  final VoidCallback onTap;
+  final Widget? trailing;
 
-  const _QuickTool({
+  const _CalcCard({
     required this.icon,
-    required this.label,
     required this.color,
+    required this.bgColor,
+    required this.title,
+    required this.subtitle,
+    this.badge,
+    required this.onTap,
+    this.trailing,
   });
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      onTap: () {},
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      onTap: onTap,
+      child: Row(
         children: [
-          Icon(icon, color: color, size: AppDimensions.iconMd),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(label, style: AppTextStyles.h4(context)),
-              Text('Open →', style: const TextStyle(fontSize: 11, color: AppColors.accent)),
-            ],
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+            ),
+            child: Icon(icon, color: color, size: 24),
           ),
+          const SizedBox(width: AppDimensions.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(title, style: AppTextStyles.h4(context)),
+                    if (badge != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                        ),
+                        child: Text(badge!,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(subtitle, style: AppTextStyles.caption(context)),
+              ],
+            ),
+          ),
+          trailing ?? const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondaryLight),
         ],
+      ),
+    );
+  }
+}
+
+class _CountBadge extends StatelessWidget {
+  final String count;
+  const _CountBadge(this.count);
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+            ),
+            child: Text(count,
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondaryLight),
+        ],
+      );
+}
+
+class _SavedRow extends StatelessWidget {
+  final String title;
+  final String city;
+  final String quality;
+  final double amount;
+  final DateTime date;
+
+  const _SavedRow({
+    required this.title,
+    required this.city,
+    required this.quality,
+    required this.amount,
+    required this.date,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppDimensions.sm),
+      child: AppCard(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        onTap: () => Get.toNamed(AppRoutes.savedCalculations),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppTextStyles.labelLarge(context)),
+                  Text('$city · $quality · ${DateFormatter.formatDateShort(date)}',
+                      style: AppTextStyles.caption(context)),
+                ],
+              ),
+            ),
+            Text(
+              CurrencyFormatter.formatCompact(amount),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

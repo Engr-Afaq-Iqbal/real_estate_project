@@ -4,9 +4,28 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../features/shell/controllers/shell_controller.dart';
 
 const _kNavAccent = Color(0xFF2563EB);
-const _kNavMuted = Color(0xFF9CA3AF);
-const _kNavBg = Color(0xFFFFFFFF);
+const _kNavMuted  = Color(0xFF9CA3AF);
+const _kNavBg     = Color(0xFFFFFFFF);
 const _kNavBorder = Color(0xFFF0F2F5);
+
+// ── Tab definition ────────────────────────────────────────────────────────────
+
+class _TabDef {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  const _TabDef(this.icon, this.activeIcon, this.label);
+}
+
+const _tabs = [
+  _TabDef(Icons.home_outlined,              Icons.home_rounded,             'Home'),
+  _TabDef(Icons.folder_open_outlined,       Icons.folder_rounded,           'Projects'),
+  _TabDef(Icons.photo_library_outlined,     Icons.photo_library_rounded,    'Updates'),
+  _TabDef(Icons.notifications_none_rounded, Icons.notifications_rounded,    'Alerts'),
+  _TabDef(Icons.person_outline_rounded,     Icons.person_rounded,           'Profile'),
+];
+
+// ── Widget ────────────────────────────────────────────────────────────────────
 
 class AppBottomNavBar extends GetView<ShellController> {
   const AppBottomNavBar({super.key});
@@ -24,48 +43,16 @@ class AppBottomNavBar extends GetView<ShellController> {
           height: 60,
           child: Obx(
             () => Row(
-              children: [
-                _NavItem(
-                  icon: Icons.home_outlined,
-                  activeIcon: Icons.home_rounded,
-                  label: 'nav_home'.tr,
-                  index: 0,
+              children: List.generate(
+                _tabs.length,
+                (i) => _NavItem(
+                  def: _tabs[i],
+                  index: i,
                   currentIndex: controller.currentIndex.value,
-                  onTap: () => controller.changeTab(0),
+                  badgeCount: i == 3 ? controller.unreadNotifications.value : 0,
+                  onTap: () => controller.changeTab(i),
                 ),
-                _NavItem(
-                  icon: Icons.folder_open_outlined,
-                  activeIcon: Icons.folder_rounded,
-                  label: 'nav_projects'.tr,
-                  index: 1,
-                  currentIndex: controller.currentIndex.value,
-                  onTap: () => controller.changeTab(1),
-                ),
-                _NavItem(
-                  icon: Icons.calculate_outlined,
-                  activeIcon: Icons.calculate_rounded,
-                  label: 'nav_calculator'.tr,
-                  index: 2,
-                  currentIndex: controller.currentIndex.value,
-                  onTap: () => controller.changeTab(2),
-                ),
-                _NavItem(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  activeIcon: Icons.chat_bubble_rounded,
-                  label: 'nav_messages'.tr,
-                  index: 3,
-                  currentIndex: controller.currentIndex.value,
-                  onTap: () => controller.changeTab(3),
-                ),
-                _NavItem(
-                  icon: Icons.settings_outlined,
-                  activeIcon: Icons.settings_rounded,
-                  label: 'nav_settings'.tr,
-                  index: 4,
-                  currentIndex: controller.currentIndex.value,
-                  onTap: () => controller.changeTab(4),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -74,20 +61,20 @@ class AppBottomNavBar extends GetView<ShellController> {
   }
 }
 
+// ── Single nav item ───────────────────────────────────────────────────────────
+
 class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
+  final _TabDef def;
   final int index;
   final int currentIndex;
+  final int badgeCount;
   final VoidCallback onTap;
 
   const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
+    required this.def,
     required this.index,
     required this.currentIndex,
+    required this.badgeCount,
     required this.onTap,
   });
 
@@ -102,22 +89,48 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              transitionBuilder: (child, anim) =>
-                  ScaleTransition(scale: anim, child: child),
-              child: Icon(
-                isActive ? activeIcon : icon,
-                key: ValueKey(isActive),
-                size: 22,
-                color: isActive ? _kNavAccent : _kNavMuted,
-              ),
+            // Icon + optional badge
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  transitionBuilder: (child, anim) =>
+                      ScaleTransition(scale: anim, child: child),
+                  child: Icon(
+                    isActive ? def.activeIcon : def.icon,
+                    key: ValueKey(isActive),
+                    size: 22,
+                    color: isActive ? _kNavAccent : _kNavMuted,
+                  ),
+                ),
+                if (badgeCount > 0)
+                  Positioned(
+                    top: -4,
+                    right: -6,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFDC2626),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '$badgeCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 3),
-            // Label
             Text(
-              label,
+              def.label,
               style: GoogleFonts.inter(
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
@@ -125,7 +138,6 @@ class _NavItem extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            // Active dot indicator
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: isActive ? 4 : 0,

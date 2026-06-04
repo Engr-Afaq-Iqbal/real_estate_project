@@ -227,7 +227,7 @@ class _ProjectCard extends StatelessWidget {
                       style: AppTextStyles.caption(context),
                     ),
                     Text(
-                      'Started ${DateFormatter.formatDateShort(project.startDate)}',
+                      'Started ${project.startDate != null ? DateFormatter.formatDateShort(project.startDate!) : '—'}',
                       style: AppTextStyles.caption(context),
                     ),
                   ],
@@ -286,7 +286,8 @@ class _ProjectCard extends StatelessWidget {
     return BadgeVariant.inProgress;
   }
 
-  String _relativeTime(DateTime dt) {
+  String _relativeTime(DateTime? dt) {
+    if (dt == null) return 'recently';
     final diff = DateTime.now().difference(dt);
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';

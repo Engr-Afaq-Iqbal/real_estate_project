@@ -42,13 +42,18 @@ import '../../features/budget/views/log_expense_sheet.dart';
 
 // Labor
 import '../../features/labor/bindings/labor_binding.dart';
+import '../../features/labor/views/labor_list_screen.dart';
 import '../../features/labor/views/labor_attendance_screen.dart';
+import '../../features/labor/views/payroll_screen.dart';
 
 // Calculator
 import '../../features/calculator/bindings/calculator_binding.dart';
 import '../../features/calculator/views/calculator_hub_screen.dart';
 import '../../features/calculator/views/calculator_form_screen.dart';
 import '../../features/calculator/views/saved_calculations_screen.dart';
+import '../../features/calculator/views/material_calculator_screen.dart';
+import '../../features/calculator/views/house_estimator_screen.dart';
+import '../../features/calculator/views/what_if_screen.dart';
 
 // Documents
 import '../../features/documents/bindings/documents_binding.dart';
@@ -176,8 +181,20 @@ class AppPages {
 
     // ── Labor ───────────────────────────────────────────────────────────────
     GetPage(
+      name: AppRoutes.laborList,
+      page: () => const LaborListScreen(),
+      binding: LaborBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
       name: AppRoutes.laborAttendance,
       page: () => const LaborAttendanceScreen(),
+      binding: LaborBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.payroll,
+      page: () => const PayrollScreen(),
       binding: LaborBinding(),
       transition: Transition.rightToLeft,
     ),
@@ -186,6 +203,24 @@ class AppPages {
     GetPage(
       name: AppRoutes.calculatorHub,
       page: () => const CalculatorHubScreen(),
+      binding: CalculatorBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.materialCalculator,
+      page: () => const MaterialCalculatorScreen(),
+      binding: CalculatorBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.houseEstimator,
+      page: () => const HouseEstimatorScreen(),
+      binding: CalculatorBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.whatIfCalculator,
+      page: () => const WhatIfScreen(),
       binding: CalculatorBinding(),
       transition: Transition.rightToLeft,
     ),

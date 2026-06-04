@@ -31,6 +31,19 @@ class AppButton extends StatelessWidget {
     this.padding,
   });
 
+  const AppButton.primary({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.leading,
+    this.trailing,
+    this.isLoading = false,
+    this.isFullWidth = true,
+    this.height,
+    this.borderRadius,
+    this.padding,
+  }) : variant = AppButtonVariant.primary;
+
   const AppButton.secondary({
     super.key,
     required this.label,

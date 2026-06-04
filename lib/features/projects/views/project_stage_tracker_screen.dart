@@ -4,6 +4,7 @@ import 'package:percent_indicator/circular_percent_indicator.dart';
 import '../controllers/projects_controller.dart';
 import '../data/models/stage_model.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../../presentation/theme/app_colors.dart';
 import '../../../presentation/theme/app_dimensions.dart';
 import '../../../presentation/theme/app_text_styles.dart';
@@ -53,10 +54,10 @@ class ProjectStageTrackerScreen extends GetView<ProjectsController> {
           body: TabBarView(
             children: [
               _StagesList(project: project),
-              const Center(child: Text('Photos coming soon')),
-              const Center(child: Text('Budget coming soon')),
-              const Center(child: Text('Labor coming soon')),
-              const Center(child: Text('Documents coming soon')),
+              _PhotosTab(project: project),
+              _BudgetTab(project: project),
+              _LaborTab(project: project),
+              _DocumentsTab(project: project),
             ],
           ),
         ),
@@ -335,6 +336,305 @@ class _StageContent extends StatelessWidget {
               ],
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Photos tab ────────────────────────────────────────────────────────────────
+class _PhotosTab extends StatelessWidget {
+  final dynamic project;
+  const _PhotosTab({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.photo_library_outlined,
+              size: 48, color: AppColors.textTertiaryLight),
+          const SizedBox(height: 12),
+          Text('Project Photos', style: AppTextStyles.h3(context)),
+          const SizedBox(height: 6),
+          Text('Upload progress photos from the site',
+              style: AppTextStyles.bodySmall(context)),
+          const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: () => Get.toNamed(AppRoutes.photoVideoFeed),
+            icon: const Icon(Icons.photo_library_outlined, size: 16),
+            label: const Text('View All Updates'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Budget tab ────────────────────────────────────────────────────────────────
+class _BudgetTab extends StatelessWidget {
+  final dynamic project;
+  const _BudgetTab({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    double budget = 0;
+    double spent  = 0;
+    try {
+      budget = (project.budgetAmount as double?) ?? (project.totalBudget as double? ?? 0);
+      spent  = (project.actualCost as double?)  ?? (project.spentBudget as double? ?? 0);
+    } catch (_) {}
+    final pct = budget > 0 ? (spent / budget).clamp(0.0, 1.0) : 0.0;
+
+    return ListView(
+      padding: const EdgeInsets.all(AppDimensions.pagePaddingH),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppDimensions.base),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.cardDark : AppColors.cardLight,
+            borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+            border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Budget Overview', style: AppTextStyles.h3(context)),
+              const SizedBox(height: AppDimensions.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: _BudgetStat(
+                        label: 'Total',
+                        value: CurrencyFormatter.formatCompact(budget),
+                        color: AppColors.primary),
+                  ),
+                  Expanded(
+                    child: _BudgetStat(
+                        label: 'Spent',
+                        value: CurrencyFormatter.formatCompact(spent),
+                        color: pct > 0.8 ? AppColors.error : AppColors.success),
+                  ),
+                  Expanded(
+                    child: _BudgetStat(
+                        label: 'Left',
+                        value: CurrencyFormatter.formatCompact(budget - spent),
+                        color: AppColors.textPrimaryLight),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppDimensions.md),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                child: LinearProgressIndicator(
+                  value: pct,
+                  minHeight: 8,
+                  backgroundColor:
+                      isDark ? AppColors.borderDark : AppColors.dividerLight,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      pct > 0.8 ? AppColors.error : AppColors.primary),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text('${(pct * 100).toStringAsFixed(0)}% of budget used',
+                  style: AppTextStyles.caption(context)),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppDimensions.xl),
+        Row(
+          children: [
+            Expanded(
+              child: AppButton(
+                label: '+ Log Expense',
+                onPressed: () => Get.toNamed(AppRoutes.logExpense),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppButton.outline(
+                label: 'Full Budget',
+                onPressed: () => Get.toNamed(AppRoutes.budgetTracker),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _BudgetStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _BudgetStat(
+      {required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          Text(value,
+              style: TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w700, color: color)),
+          const SizedBox(height: 2),
+          Text(label, style: AppTextStyles.caption(context)),
+        ],
+      );
+}
+
+// ── Labor tab ─────────────────────────────────────────────────────────────────
+class _LaborTab extends StatelessWidget {
+  final dynamic project;
+  const _LaborTab({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    final workerCount = (project.workerCount as int?) ?? 0;
+    return ListView(
+      padding: const EdgeInsets.all(AppDimensions.pagePaddingH),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppDimensions.base),
+          decoration: BoxDecoration(
+            color: AppColors.infoLight,
+            borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+            border:
+                Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.people_outline, color: AppColors.primary, size: 28),
+              const SizedBox(width: AppDimensions.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$workerCount Active Workers',
+                        style: AppTextStyles.h4(context)
+                            .copyWith(color: AppColors.primary)),
+                    Text('Manage attendance and payroll',
+                        style: AppTextStyles.caption(context)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppDimensions.xl),
+        _LaborActionTile(
+          icon: Icons.people_alt_outlined,
+          title: 'Manage Workers',
+          subtitle: 'Add, edit or release site workers',
+          color: AppColors.primary,
+          onTap: () => Get.toNamed(AppRoutes.laborList),
+        ),
+        const SizedBox(height: AppDimensions.md),
+        _LaborActionTile(
+          icon: Icons.checklist_rounded,
+          title: 'Mark Attendance',
+          subtitle: 'Sat–Thu weekly attendance grid',
+          color: AppColors.success,
+          onTap: () => Get.toNamed(AppRoutes.laborAttendance),
+        ),
+        const SizedBox(height: AppDimensions.md),
+        _LaborActionTile(
+          icon: Icons.payments_outlined,
+          title: 'Payroll',
+          subtitle: 'Generate and approve weekly wages',
+          color: const Color(0xFF7C3AED),
+          onTap: () => Get.toNamed(AppRoutes.payroll),
+        ),
+      ],
+    );
+  }
+}
+
+class _LaborActionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _LaborActionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppDimensions.base),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.cardDark : AppColors.cardLight,
+          borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+          border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: AppDimensions.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppTextStyles.h4(context)),
+                  Text(subtitle, style: AppTextStyles.caption(context)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: AppColors.textSecondaryLight),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Documents tab ─────────────────────────────────────────────────────────────
+class _DocumentsTab extends StatelessWidget {
+  final dynamic project;
+  const _DocumentsTab({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.folder_open_outlined,
+              size: 48, color: AppColors.textTertiaryLight),
+          const SizedBox(height: 12),
+          Text('Documents', style: AppTextStyles.h3(context)),
+          const SizedBox(height: 6),
+          Text('Store drawings, NOC, and contracts',
+              style: AppTextStyles.bodySmall(context)),
+          const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: () => Get.toNamed(AppRoutes.documentsVault),
+            icon: const Icon(Icons.folder_open_outlined, size: 16),
+            label: const Text('Open Document Vault'),
+          ),
         ],
       ),
     );

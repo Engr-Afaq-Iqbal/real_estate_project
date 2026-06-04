@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/shell_controller.dart';
 import '../../../presentation/widgets/layout/bottom_nav_bar.dart';
+
+// Tabs (in order)
 import '../../dashboard/views/homeowner_dashboard_screen.dart';
 import '../../dashboard/views/developer_dashboard_screen.dart';
 import '../../projects/views/my_projects_screen.dart';
-import '../../calculator/views/calculator_hub_screen.dart';
-import '../../chat/views/chat_screen.dart';
-import '../../settings/views/settings_screen.dart';
+import '../../updates/views/photo_video_feed_screen.dart';
+import '../../notifications/views/notifications_screen.dart';
+import '../../profile/views/profile_screen.dart';
 
+/// New navigation: Dashboard | Projects | Updates | Notifications | Profile
+///
+/// Calculator → Dashboard widget (expandable card)
+/// Chat       → Project detail tab
 class MainShell extends GetView<ShellController> {
   const MainShell({super.key});
 
@@ -29,19 +35,20 @@ class MainShell extends GetView<ShellController> {
     });
   }
 
+  // Tab 0: Dashboard  1: Projects  2: Updates  3: Notifications  4: Profile
   static const _homeownerScreens = [
     HomeownerDashboardScreen(),
     MyProjectsScreen(),
-    CalculatorHubScreen(),
-    ChatScreen(),
-    SettingsScreen(),
+    PhotoVideoFeedScreen(),
+    NotificationsScreen(),
+    ProfileScreen(),
   ];
 
   static const _developerScreens = [
     DeveloperDashboardScreen(),
     MyProjectsScreen(),
-    CalculatorHubScreen(),
-    ChatScreen(),
-    SettingsScreen(),
+    PhotoVideoFeedScreen(),
+    NotificationsScreen(),
+    ProfileScreen(),
   ];
 }

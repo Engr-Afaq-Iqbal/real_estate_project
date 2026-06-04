@@ -95,10 +95,60 @@ class AppTextStyles {
           ? AppColors.textTertiaryDark
           : AppColors.textTertiaryLight;
 
-  // ── Static (no context) ───────────────────────────────────────────────────
+  // ── Static (no context) — use in widgets without BuildContext ────────────
   static TextStyle get headingLargeStatic =>
       GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700, height: 1.3, color: AppColors.textPrimaryLight);
 
   static TextStyle get bodyStatic =>
       GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w400, height: 1.5, color: AppColors.textPrimaryLight);
+
+  // Context-free aliases — suffixed with 'S' to avoid conflicting with
+  // the BuildContext-taking methods above. Use these in new screens.
+  static TextStyle get displayS =>
+      GoogleFonts.inter(fontSize: 36, fontWeight: FontWeight.w800, height: 1.1, color: AppColors.textPrimaryLight);
+
+  static TextStyle get displayMediumS =>
+      GoogleFonts.inter(fontSize: 30, fontWeight: FontWeight.w700, height: 1.2, color: AppColors.textPrimaryLight);
+
+  static TextStyle get h1S =>
+      GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700, height: 1.3, color: AppColors.textPrimaryLight);
+
+  static TextStyle get h2S =>
+      GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, height: 1.3, color: AppColors.textPrimaryLight);
+
+  static TextStyle get h3S =>
+      GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, height: 1.4, color: AppColors.textPrimaryLight);
+
+  static TextStyle get h4S =>
+      GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, height: 1.4, color: AppColors.textPrimaryLight);
+
+  static TextStyle get bodyLargeS =>
+      GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w400, height: 1.5, color: AppColors.textPrimaryLight);
+
+  static TextStyle get bodyMediumS =>
+      GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w400, height: 1.5, color: AppColors.textPrimaryLight);
+
+  static TextStyle get bodySmallS =>
+      GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w400, height: 1.5, color: AppColors.textSecondaryLight);
+
+  static TextStyle get labelLargeS =>
+      GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, height: 1.4, color: AppColors.textPrimaryLight);
+
+  static TextStyle get labelMediumS =>
+      GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, height: 1.4, color: AppColors.textSecondaryLight);
+
+  static TextStyle get labelSmallS =>
+      GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, height: 1.4, color: AppColors.textSecondaryLight, letterSpacing: 0.5);
+
+  static TextStyle get captionS =>
+      GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w400, height: 1.4, color: AppColors.textTertiaryLight);
+
+  static TextStyle get amountLargeS =>
+      GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w700, height: 1.2, color: AppColors.textPrimaryLight);
+
+  static TextStyle get amountMediumS =>
+      GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, height: 1.2, color: AppColors.textPrimaryLight);
+
+  static TextStyle get amountSmallS =>
+      GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, height: 1.3, color: AppColors.textPrimaryLight);
 }
