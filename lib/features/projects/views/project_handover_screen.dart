@@ -11,7 +11,10 @@ class ProjectHandoverScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final checklistItems = [
+    final cs      = Theme.of(context).colorScheme;
+    final divider = Theme.of(context).dividerColor;
+
+    const checklistItems = [
       'All snagging resolved',
       'Final inspection done',
       'Utility connections active',
@@ -31,30 +34,25 @@ class ProjectHandoverScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(AppDimensions.xl),
               decoration: BoxDecoration(
-                color: AppColors.successLight,
+                color: AppColors.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
               ),
               child: Column(
                 children: [
                   Container(
-                    width: 72,
-                    height: 72,
+                    width: 72, height: 72,
                     decoration: BoxDecoration(
                       color: AppColors.success.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.home_outlined,
-                      color: AppColors.success,
-                      size: 40,
-                    ),
+                    child: const Icon(Icons.home_outlined,
+                        color: AppColors.success, size: 40),
                   ),
                   const SizedBox(height: AppDimensions.md),
                   Text(
                     '🎉 Construction Complete!',
-                    style: AppTextStyles.h2(context).copyWith(
-                      color: const Color(0xFF15803D),
-                    ),
+                    style: AppTextStyles.h2(context)
+                        .copyWith(color: AppColors.success),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -75,15 +73,15 @@ class ProjectHandoverScreen extends StatelessWidget {
                   Expanded(
                     child: _HandoverStat(value: '12', label: 'Months'),
                   ),
-                  Container(width: 1, height: 40, color: AppColors.dividerLight),
+                  Container(width: 1, height: 40, color: divider),
                   Expanded(
                     child: _HandoverStat(
                       value: 'PKR\n48.5L',
                       label: 'Total cost',
-                      valueColor: AppColors.primary,
+                      valueColor: cs.primary,
                     ),
                   ),
-                  Container(width: 1, height: 40, color: AppColors.dividerLight),
+                  Container(width: 1, height: 40, color: divider),
                   Expanded(
                     child: _HandoverStat(value: '10 / 10', label: 'Stages'),
                   ),
@@ -101,15 +99,15 @@ class ProjectHandoverScreen extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text('handover_checklist'.tr, style: AppTextStyles.h3(context)),
+                        child: Text('handover_checklist'.tr,
+                            style: AppTextStyles.h3(context)),
                       ),
-                      Text(
+                      const Text(
                         '6 of 6 Complete',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.success,
-                        ),
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.success),
                       ),
                     ],
                   ),
@@ -125,9 +123,7 @@ class ProjectHandoverScreen extends StatelessWidget {
 
             AppButton(
               label: '🔑 Mark Project Complete',
-              onPressed: () {
-                Get.back();
-              },
+              onPressed: () => Get.back(),
             ),
 
             const SizedBox(height: AppDimensions.xxl),
@@ -143,14 +139,11 @@ class _HandoverStat extends StatelessWidget {
   final String label;
   final Color? valueColor;
 
-  const _HandoverStat({
-    required this.value,
-    required this.label,
-    this.valueColor,
-  });
+  const _HandoverStat({required this.value, required this.label, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
         Text(
@@ -159,7 +152,7 @@ class _HandoverStat extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: valueColor ?? AppColors.primary,
+            color: valueColor ?? cs.primary,
           ),
         ),
         Text(label, style: AppTextStyles.caption(context)),
@@ -176,34 +169,34 @@ class _ChecklistRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final divider = Theme.of(context).dividerColor;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppDimensions.sm),
       child: Row(
         children: [
           Container(
-            width: 24,
-            height: 24,
+            width: 24, height: 24,
             decoration: BoxDecoration(
               color: done ? AppColors.success : Colors.transparent,
               shape: BoxShape.circle,
               border: Border.all(
-                color: done ? AppColors.success : AppColors.borderLight,
-              ),
+                  color: done ? AppColors.success : divider),
             ),
             child: done
-                ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+                ? const Icon(Icons.check_rounded,
+                    size: 14, color: Colors.white)
                 : null,
           ),
           const SizedBox(width: AppDimensions.md),
-          Expanded(child: Text(label, style: AppTextStyles.bodyMedium(context))),
+          Expanded(
+              child: Text(label, style: AppTextStyles.bodyMedium(context))),
           if (done)
             const Text(
               'DONE',
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppColors.success,
-              ),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.success),
             ),
         ],
       ),

@@ -8,28 +8,16 @@ import '../../projects/data/models/project_model.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../presentation/routes/app_routes.dart';
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
-const _kPrimary    = Color(0xFF1B3A6B);
-const _kAccent     = Color(0xFF2563EB);
-const _kBg         = Color(0xFFF8F9FC);
-const _kCardBg     = Color(0xFFFFFFFF);
-const _kTextPrimary  = Color(0xFF1B3A6B);
-const _kTextBody   = Color(0xFF374151);
-const _kTextMuted  = Color(0xFF9CA3AF);
-const _kTextSecondary = Color(0xFF6B7280);
-const _kBorderLight  = Color(0xFFE5E7EB);
-const _kSeparator  = Color(0xFFF0F2F5);
-const _kSuccess    = Color(0xFF16A34A);
-const _kWarning    = Color(0xFFF59E0B);
-const _kError      = Color(0xFFDC2626);
+// Semantic colours that never change with theme
+const _kSuccess = Color(0xFF16A34A);
+const _kWarning = Color(0xFFF59E0B);
+const _kError   = Color(0xFFDC2626);
 
-const _kCardShadow = BoxShadow(
-  color: Color(0x0D000000),
-  blurRadius: 16,
-  offset: Offset(0, 2),
-);
-
-// ── Screen ────────────────────────────────────────────────────────────────────
+// Primary text: dark navy in light mode (readable on white), white in dark mode
+Color _primaryText(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : Theme.of(context).colorScheme.primary;
 
 class HomeownerDashboardScreen extends GetView<DashboardController> {
   const HomeownerDashboardScreen({super.key});
@@ -37,8 +25,11 @@ class HomeownerDashboardScreen extends GetView<DashboardController> {
   @override
   Widget build(BuildContext context) {
     final auth = Get.find<AuthController>();
+    final cs   = Theme.of(context).colorScheme;
+    final bg   = Theme.of(context).scaffoldBackgroundColor;
+
     return Scaffold(
-      backgroundColor: _kBg,
+      backgroundColor: bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -46,13 +37,14 @@ class HomeownerDashboardScreen extends GetView<DashboardController> {
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
-                  return const Center(
-                    child: CircularProgressIndicator(strokeWidth: 2, color: _kAccent),
+                  return Center(
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: cs.primary),
                   );
                 }
                 return RefreshIndicator(
                   onRefresh: controller.loadDashboard,
-                  color: _kAccent,
+                  color: cs.primary,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: 40),
@@ -60,57 +52,53 @@ class HomeownerDashboardScreen extends GetView<DashboardController> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 16),
-
-                        // ── Quick Actions ──────────────────────────────────
                         const _QuickActionsRow(),
                         const SizedBox(height: 20),
-
-                        // ── Market Price Widget ────────────────────────────
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: _MarketPriceWidget(controller: controller),
+                          child: _MarketPriceWidget(
+                              controller: controller),
                         ),
                         const SizedBox(height: 20),
-
-                        // ── Calculator Widget ──────────────────────────────
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: _CalculatorWidget(controller: controller),
+                          child: _CalculatorWidget(
+                              controller: controller),
                         ),
                         const SizedBox(height: 20),
-
-                        // ── Primary project hero ───────────────────────────
                         if (controller.primaryProject != null) ...[
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: _HeroCard(project: controller.primaryProject!),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            child: _HeroCard(
+                                project: controller.primaryProject!),
                           ),
                           const SizedBox(height: 20),
                         ],
-
-                        // ── Upcoming Tasks ─────────────────────────────────
                         if (controller.upcomingTasks.isNotEmpty) ...[
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: _UpcomingTasksSection(controller: controller),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            child: _UpcomingTasksSection(
+                                controller: controller),
                           ),
                           const SizedBox(height: 20),
                         ],
-
-                        // ── Budget Alerts ──────────────────────────────────
                         if (controller.budgetAlerts.isNotEmpty) ...[
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: _BudgetAlertsSection(controller: controller),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            child: _BudgetAlertsSection(
+                                controller: controller),
                           ),
                           const SizedBox(height: 20),
                         ],
-
-                        // ── Active Projects ────────────────────────────────
                         if (controller.activeProjects.isNotEmpty) ...[
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: _ActiveProjectsSection(controller: controller),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            child: _ActiveProjectsSection(
+                                controller: controller),
                           ),
                         ],
                       ],
@@ -135,8 +123,13 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs      = Theme.of(context).colorScheme;
+    final surface = Theme.of(context).colorScheme.surface;
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
+    final divider = Theme.of(context).dividerColor;
+
     return Container(
-      color: _kCardBg,
+      color: surface,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
       child: Row(
         children: [
@@ -148,14 +141,18 @@ class _Header extends StatelessWidget {
                     Text(
                       '${auth.greeting} ☀️',
                       style: GoogleFonts.inter(
-                          fontSize: 12, fontWeight: FontWeight.w400, color: _kTextMuted),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: cs.onSurfaceVariant),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       auth.currentUser.value?.name.split(' ').first ?? 'Ahmed',
                       style: GoogleFonts.inter(
-                          fontSize: 22, fontWeight: FontWeight.w700,
-                          color: _kTextPrimary, height: 1.1),
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface,
+                          height: 1.1),
                     ),
                   ],
                 )),
@@ -169,8 +166,12 @@ class _Header extends StatelessWidget {
                     Container(
                       width: 40, height: 40,
                       decoration: BoxDecoration(
-                        color: _kSeparator, borderRadius: BorderRadius.circular(12)),
-                      child: const Icon(Icons.notifications_outlined, size: 20, color: _kTextBody),
+                          color: isDark
+                              ? cs.surfaceContainerHighest
+                              : divider.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Icon(Icons.notifications_outlined,
+                          size: 20, color: cs.onSurface),
                     ),
                     if (controller.unreadNotifications.value > 0)
                       Positioned(
@@ -178,8 +179,10 @@ class _Header extends StatelessWidget {
                         child: Container(
                           width: 8, height: 8,
                           decoration: BoxDecoration(
-                            color: _kError, shape: BoxShape.circle,
-                            border: Border.all(color: _kCardBg, width: 1.5)),
+                            color: _kError,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: surface, width: 1.5),
+                          ),
                         ),
                       ),
                   ],
@@ -191,12 +194,15 @@ class _Header extends StatelessWidget {
             onTap: () => Get.toNamed(AppRoutes.profile),
             child: Obx(() => Container(
                   width: 38, height: 38,
-                  decoration: const BoxDecoration(color: _kPrimary, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                      color: cs.primary, shape: BoxShape.circle),
                   child: Center(
                     child: Text(
                       auth.currentUser.value?.initials ?? 'AK',
                       style: GoogleFonts.inter(
-                          fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white),
                     ),
                   ),
                 )),
@@ -207,7 +213,7 @@ class _Header extends StatelessWidget {
   }
 }
 
-// ── Quick Actions Row ─────────────────────────────────────────────────────────
+// ── Quick Actions ─────────────────────────────────────────────────────────────
 
 class _QuickActionsRow extends StatelessWidget {
   const _QuickActionsRow();
@@ -221,16 +227,16 @@ class _QuickActionsRow extends StatelessWidget {
           _QuickAction(
             icon: Icons.add_circle_outline_rounded,
             label: 'New Project',
-            color: _kAccent,
-            bg: const Color(0xFFEFF6FF),
+            color: Theme.of(context).colorScheme.primary,
+            bg: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             onTap: () => Get.toNamed(AppRoutes.newProjectWizard),
           ),
           const SizedBox(width: 10),
           _QuickAction(
             icon: Icons.camera_alt_outlined,
             label: 'Add Update',
-            color: const Color(0xFF16A34A),
-            bg: const Color(0xFFF0FDF4),
+            color: _kSuccess,
+            bg: _kSuccess.withValues(alpha: 0.1),
             onTap: () => Get.toNamed(AppRoutes.photoVideoFeed),
           ),
           const SizedBox(width: 10),
@@ -238,15 +244,15 @@ class _QuickActionsRow extends StatelessWidget {
             icon: Icons.calculate_outlined,
             label: 'Estimate',
             color: const Color(0xFF7C3AED),
-            bg: const Color(0xFFF5F3FF),
+            bg: const Color(0xFF7C3AED).withValues(alpha: 0.1),
             onTap: () => Get.toNamed(AppRoutes.houseEstimator),
           ),
           const SizedBox(width: 10),
           _QuickAction(
             icon: Icons.folder_open_outlined,
             label: 'Projects',
-            color: const Color(0xFFF59E0B),
-            bg: const Color(0xFFFFFBEB),
+            color: _kWarning,
+            bg: _kWarning.withValues(alpha: 0.1),
             onTap: () => Get.toNamed(AppRoutes.myProjects),
           ),
         ],
@@ -270,10 +276,7 @@ class _QuickAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: GestureDetector(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onTap();
-        },
+        onTap: () { HapticFeedback.lightImpact(); onTap(); },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
@@ -284,12 +287,10 @@ class _QuickAction extends StatelessWidget {
             children: [
               Icon(icon, size: 22, color: color),
               const SizedBox(height: 6),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                    fontSize: 10, fontWeight: FontWeight.w600, color: color),
-                textAlign: TextAlign.center,
-              ),
+              Text(label,
+                  style: GoogleFonts.inter(
+                      fontSize: 10, fontWeight: FontWeight.w600, color: color),
+                  textAlign: TextAlign.center),
             ],
           ),
         ),
@@ -306,35 +307,45 @@ class _MarketPriceWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _kCardBg,
+        color: surface,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: const [_kCardShadow],
+        boxShadow: [
+          BoxShadow(
+              color: cs.onSurface.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 2)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               Container(
                 width: 28, height: 28,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBEB),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.bar_chart_rounded, size: 16, color: _kWarning),
+                    color: _kWarning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8)),
+                child:
+                    const Icon(Icons.bar_chart_rounded, size: 16, color: _kWarning),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text('Market Prices Today',
                     style: GoogleFonts.inter(
-                        fontSize: 14, fontWeight: FontWeight.w600, color: _kTextPrimary)),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface)),
               ),
               Text('Lahore · June 2026',
-                  style: GoogleFonts.inter(fontSize: 11, color: _kTextMuted)),
+                  style: GoogleFonts.inter(
+                      fontSize: 11, color: cs.onSurfaceVariant)),
             ],
           ),
           const SizedBox(height: 14),
@@ -348,22 +359,21 @@ class _MarketPriceWidget extends StatelessWidget {
             );
           }),
           const SizedBox(height: 12),
-          // Full calculator link
           GestureDetector(
             onTap: () => Get.toNamed(AppRoutes.materialCalculator),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
+                color: cs.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                'Open Material Calculator →',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                    fontSize: 12, fontWeight: FontWeight.w600, color: _kAccent),
-              ),
+              child: Text('Open Material Calculator →',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _primaryText(context))),
             ),
           ),
         ],
@@ -378,43 +388,38 @@ class _PriceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = price.isUp ? _kError : price.isDown ? _kSuccess : _kTextMuted;
+    final cs    = Theme.of(context).colorScheme;
+    final color = price.isUp ? _kError : price.isDown ? _kSuccess : cs.onSurfaceVariant;
     final arrow = price.isUp ? '↑' : price.isDown ? '↓' : '→';
 
     return Column(
       children: [
-        Text(
-          price.material,
-          style: GoogleFonts.inter(
-              fontSize: 10, fontWeight: FontWeight.w500, color: _kTextMuted),
-        ),
+        Text(price.material,
+            style: GoogleFonts.inter(
+                fontSize: 10, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant)),
         const SizedBox(height: 4),
-        Text(
-          '${price.price.toStringAsFixed(0)}',
-          style: GoogleFonts.inter(
-              fontSize: 14, fontWeight: FontWeight.w700, color: _kTextPrimary),
-        ),
+        Text('${price.price.toStringAsFixed(0)}',
+            style: GoogleFonts.inter(
+                fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface)),
         const SizedBox(height: 2),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              arrow,
-              style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700),
-            ),
+            Text(arrow,
+                style: TextStyle(
+                    fontSize: 10, color: color, fontWeight: FontWeight.w700)),
             const SizedBox(width: 1),
             Text(
               price.changeToday == 0
                   ? 'Stable'
-                  : '${price.changeToday.abs().toStringAsFixed(0)}',
-              style: GoogleFonts.inter(fontSize: 9, color: color, fontWeight: FontWeight.w500),
+                  : price.changeToday.abs().toStringAsFixed(0),
+              style: GoogleFonts.inter(
+                  fontSize: 9, color: color, fontWeight: FontWeight.w500),
             ),
           ],
         ),
-        Text(
-          price.unit,
-          style: GoogleFonts.inter(fontSize: 9, color: _kTextMuted),
-        ),
+        Text(price.unit,
+            style: GoogleFonts.inter(fontSize: 9, color: cs.onSurfaceVariant)),
       ],
     );
   }
@@ -428,6 +433,8 @@ class _CalculatorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Obx(() {
       final expanded = controller.calcExpanded.value;
       return AnimatedContainer(
@@ -435,8 +442,11 @@ class _CalculatorWidget extends StatelessWidget {
         curve: Curves.easeInOut,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1B3A6B), Color(0xFF2563EB)],
+          gradient: LinearGradient(
+            colors: [
+              cs.primary,
+              Color.lerp(cs.primary, Colors.blue, 0.3) ?? cs.primary,
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -445,7 +455,7 @@ class _CalculatorWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header row
+            // Header
             Row(
               children: [
                 Container(
@@ -454,13 +464,16 @@ class _CalculatorWidget extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.calculate_outlined, size: 16, color: Colors.white),
+                  child: const Icon(Icons.calculate_outlined,
+                      size: 16, color: Colors.white),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text('Quick Estimator',
                       style: GoogleFonts.inter(
-                          fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white)),
                 ),
                 GestureDetector(
                   onTap: () {
@@ -468,30 +481,28 @@ class _CalculatorWidget extends StatelessWidget {
                     controller.toggleCalcWidget();
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(
-                      expanded ? 'Close' : 'Calculate',
-                      style: GoogleFonts.inter(
-                          fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
-                    ),
+                    child: Text(expanded ? 'Close' : 'Calculate',
+                        style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white)),
                   ),
                 ),
               ],
             ),
-
             if (!expanded) ...[
               const SizedBox(height: 10),
-              Text(
-                'Estimate any construction cost instantly.',
-                style: GoogleFonts.inter(
-                    fontSize: 12, color: Colors.white.withValues(alpha: 0.7)),
-              ),
+              Text('Estimate any construction cost instantly.',
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.7))),
               const SizedBox(height: 10),
-              // Preview prices
               Row(
                 children: [
                   _MiniPricePill('Steel', '262/kg'),
@@ -502,10 +513,8 @@ class _CalculatorWidget extends StatelessWidget {
                 ],
               ),
             ],
-
             if (expanded) ...[
               const SizedBox(height: 16),
-              // Area input
               _CalcInputRow(
                 label: 'Plot Size',
                 hint: 'e.g. 5',
@@ -516,12 +525,12 @@ class _CalculatorWidget extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 10),
-              // Floors selector
               Row(
                 children: [
                   Text('Floors',
                       style: GoogleFonts.inter(
-                          fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.8))),
                   const SizedBox(width: 12),
                   ...List.generate(3, (i) {
                     final f = i + 1;
@@ -530,7 +539,8 @@ class _CalculatorWidget extends StatelessWidget {
                       child: GestureDetector(
                         onTap: () {
                           controller.calcFloors.value = f;
-                          controller.runQuickEstimate(controller.calcAreaCtrl.value);
+                          controller.runQuickEstimate(
+                              controller.calcAreaCtrl.value);
                         },
                         child: Obx(() => Container(
                               width: 32, height: 32,
@@ -546,7 +556,7 @@ class _CalculatorWidget extends StatelessWidget {
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                     color: controller.calcFloors.value == f
-                                        ? _kPrimary
+                                        ? cs.primary
                                         : Colors.white,
                                   )),
                             )),
@@ -554,16 +564,19 @@ class _CalculatorWidget extends StatelessWidget {
                     );
                   }),
                   const Spacer(),
-                  // Quality picker
                   Obx(() => GestureDetector(
                         onTap: () {
                           final tiers = ['economy', 'standard', 'premium'];
-                          final idx = tiers.indexOf(controller.calcQuality.value);
-                          controller.calcQuality.value = tiers[(idx + 1) % tiers.length];
-                          controller.runQuickEstimate(controller.calcAreaCtrl.value);
+                          final idx = tiers.indexOf(
+                              controller.calcQuality.value);
+                          controller.calcQuality.value =
+                              tiers[(idx + 1) % tiers.length];
+                          controller.runQuickEstimate(
+                              controller.calcAreaCtrl.value);
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(8),
@@ -572,9 +585,11 @@ class _CalculatorWidget extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                _qualityLabel(controller.calcQuality.value),
+                                _qualityLabel(
+                                    controller.calcQuality.value),
                                 style: GoogleFonts.inter(
-                                    fontSize: 11, color: Colors.white,
+                                    fontSize: 11,
+                                    color: Colors.white,
                                     fontWeight: FontWeight.w600),
                               ),
                               const SizedBox(width: 4),
@@ -587,12 +602,12 @@ class _CalculatorWidget extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              // Result
               Obx(() {
                 final est = controller.quickEstimate.value;
                 return Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
@@ -604,40 +619,33 @@ class _CalculatorWidget extends StatelessWidget {
                             Text('Estimated Cost',
                                 style: GoogleFonts.inter(
                                     fontSize: 11,
-                                    color: Colors.white.withValues(alpha: 0.7))),
+                                    color: Colors.white
+                                        .withValues(alpha: 0.7))),
                             const SizedBox(height: 4),
                             Text(
                               CurrencyFormatter.formatCompact(est),
                               style: GoogleFonts.inter(
-                                  fontSize: 24, fontWeight: FontWeight.w800,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w800,
                                   color: Colors.white),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'PKR ${CurrencyFormatter.formatNumber(est / (controller.calcFloors.value * (double.tryParse(controller.calcAreaCtrl.value) ?? 1) * 272.25))}/sqft · incl. 10% contingency',
-                              style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  color: Colors.white.withValues(alpha: 0.6)),
                             ),
                           ],
                         )
-                      : Text(
-                          'Enter plot size above to see estimate',
+                      : Text('Enter plot size above to see estimate',
                           style: GoogleFonts.inter(
                               fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.6)),
-                        ),
+                              color: Colors.white.withValues(alpha: 0.6))),
                 );
               }),
               const SizedBox(height: 12),
-              // CTA buttons
               Row(
                 children: [
                   Expanded(
                     child: GestureDetector(
                       onTap: () => Get.toNamed(AppRoutes.houseEstimator),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 10),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
@@ -645,7 +653,8 @@ class _CalculatorWidget extends StatelessWidget {
                         ),
                         child: Text('Full Estimate',
                             style: GoogleFonts.inter(
-                                fontSize: 12, fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
                                 color: Colors.white)),
                       ),
                     ),
@@ -655,7 +664,8 @@ class _CalculatorWidget extends StatelessWidget {
                     child: GestureDetector(
                       onTap: () => Get.toNamed(AppRoutes.newProjectWizard),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 10),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -663,8 +673,9 @@ class _CalculatorWidget extends StatelessWidget {
                         ),
                         child: Text('Create Project',
                             style: GoogleFonts.inter(
-                                fontSize: 12, fontWeight: FontWeight.w600,
-                                color: _kPrimary)),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: cs.primary)),
                       ),
                     ),
                   ),
@@ -678,9 +689,9 @@ class _CalculatorWidget extends StatelessWidget {
   }
 
   String _qualityLabel(String tier) => switch (tier) {
-        'economy'  => 'Economy',
-        'premium'  => 'Premium',
-        _          => 'Standard',
+        'economy' => 'Economy',
+        'premium' => 'Premium',
+        _         => 'Standard',
       };
 }
 
@@ -698,7 +709,8 @@ class _MiniPricePill extends StatelessWidget {
         ),
         child: Text('$label: $value',
             style: GoogleFonts.inter(
-                fontSize: 10, color: Colors.white.withValues(alpha: 0.8))),
+                fontSize: 10,
+                color: Colors.white.withValues(alpha: 0.8))),
       );
 }
 
@@ -718,7 +730,8 @@ class _CalcInputRow extends StatelessWidget {
       children: [
         Text(label,
             style: GoogleFonts.inter(
-                fontSize: 12, color: Colors.white.withValues(alpha: 0.8))),
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.8))),
         const SizedBox(width: 12),
         Expanded(
           child: Container(
@@ -735,7 +748,8 @@ class _CalcInputRow extends StatelessWidget {
                     keyboardType: TextInputType.number,
                     onChanged: onChanged,
                     style: GoogleFonts.inter(
-                        fontSize: 14, fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                         color: Colors.white),
                     decoration: InputDecoration(
                       hintText: hint,
@@ -769,6 +783,8 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -777,24 +793,32 @@ class _HeroCard extends StatelessWidget {
             Expanded(
               child: Text('Active Project',
                   style: GoogleFonts.inter(
-                      fontSize: 15, fontWeight: FontWeight.w600, color: _kTextPrimary)),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface)),
             ),
             GestureDetector(
               onTap: () => Get.toNamed(AppRoutes.myProjects),
               child: Text('View All →',
                   style: GoogleFonts.inter(
-                      fontSize: 12, fontWeight: FontWeight.w500, color: _kAccent)),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: _primaryText(context))),
             ),
           ],
         ),
         const SizedBox(height: 10),
         GestureDetector(
-          onTap: () => Get.toNamed(AppRoutes.projectStageTracker, arguments: project),
+          onTap: () => Get.toNamed(AppRoutes.projectStageTracker,
+              arguments: project),
           child: Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [_kPrimary, _kAccent],
+              gradient: LinearGradient(
+                colors: [
+                  cs.primary,
+                  Color.lerp(cs.primary, Colors.blue, 0.3) ?? cs.primary,
+                ],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
@@ -814,14 +838,16 @@ class _HeroCard extends StatelessWidget {
                             color: Colors.white.withValues(alpha: 0.7))),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(project.statusLabel,
                           style: GoogleFonts.inter(
-                              fontSize: 10, fontWeight: FontWeight.w600,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
                               color: Colors.white)),
                     ),
                   ],
@@ -829,12 +855,15 @@ class _HeroCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(project.name,
                     style: GoogleFonts.inter(
-                        fontSize: 18, fontWeight: FontWeight.w700,
-                        color: Colors.white, height: 1.2)),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        height: 1.2)),
                 const SizedBox(height: 4),
                 Text(project.currentStage.toUpperCase(),
                     style: GoogleFonts.inter(
-                        fontSize: 10, fontWeight: FontWeight.w600,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
                         color: Colors.white.withValues(alpha: 0.7))),
                 const SizedBox(height: 14),
@@ -849,7 +878,8 @@ class _HeroCard extends StatelessWidget {
                         label: 'Left'),
                     const SizedBox(width: 8),
                     _StatPill(
-                        value: CurrencyFormatter.formatLakh(project.spentBudget),
+                        value: CurrencyFormatter.formatLakh(
+                            project.spentBudget),
                         label: 'Spent'),
                   ],
                 ),
@@ -860,7 +890,8 @@ class _HeroCard extends StatelessWidget {
                     value: project.progress,
                     minHeight: 5,
                     backgroundColor: Colors.white.withValues(alpha: 0.2),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor:
+                        const AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 ),
               ],
@@ -890,8 +921,10 @@ class _StatPill extends StatelessWidget {
             children: [
               Text(value,
                   style: GoogleFonts.inter(
-                      fontSize: 14, fontWeight: FontWeight.w700,
-                      color: Colors.white, height: 1.1)),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      height: 1.1)),
               const SizedBox(height: 1),
               Text(label,
                   style: GoogleFonts.inter(
@@ -911,6 +944,7 @@ class _UpcomingTasksSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -921,20 +955,23 @@ class _UpcomingTasksSection extends StatelessWidget {
                 children: [
                   Text('Upcoming Tasks',
                       style: GoogleFonts.inter(
-                          fontSize: 15, fontWeight: FontWeight.w600,
-                          color: _kTextPrimary)),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface)),
                   if (controller.overdueTaskCount > 0) ...[
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFEE2E2),
+                        color: _kError.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         '${controller.overdueTaskCount} overdue',
                         style: GoogleFonts.inter(
-                            fontSize: 10, fontWeight: FontWeight.w600,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
                             color: _kError),
                       ),
                     ),
@@ -945,7 +982,7 @@ class _UpcomingTasksSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
-        ...controller.upcomingTasks.map((task) => _TaskRow(task: task)),
+        ...controller.upcomingTasks.map((t) => _TaskRow(task: t)),
       ],
     );
   }
@@ -957,7 +994,9 @@ class _TaskRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+    final now     = DateTime.now();
     final daysLeft = task.dueDate.difference(now).inDays;
     final timeLabel = task.isOverdue
         ? '${(-daysLeft)} days overdue'
@@ -969,15 +1008,20 @@ class _TaskRow extends StatelessWidget {
         ? _kError
         : task.priority == 'high'
             ? _kWarning
-            : _kAccent;
+            : cs.primary;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _kCardBg,
+        color: surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [_kCardShadow],
+        boxShadow: [
+          BoxShadow(
+              color: cs.onSurface.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2)),
+        ],
         border: task.isOverdue
             ? Border.all(color: _kError.withValues(alpha: 0.2))
             : null,
@@ -985,28 +1029,31 @@ class _TaskRow extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 8, height: 8,
-            margin: const EdgeInsets.only(right: 10, top: 2),
-            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
-          ),
+              width: 8, height: 8,
+              margin: const EdgeInsets.only(right: 10, top: 2),
+              decoration:
+                  BoxDecoration(color: dotColor, shape: BoxShape.circle)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(task.title,
                     style: GoogleFonts.inter(
-                        fontSize: 13, fontWeight: FontWeight.w500,
-                        color: _kTextPrimary)),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: cs.onSurface)),
                 const SizedBox(height: 2),
                 Text('${task.projectName} · ${task.stageName}',
-                    style: GoogleFonts.inter(fontSize: 11, color: _kTextMuted)),
+                    style: GoogleFonts.inter(
+                        fontSize: 11, color: cs.onSurfaceVariant)),
               ],
             ),
           ),
           Text(timeLabel,
               style: GoogleFonts.inter(
-                  fontSize: 10, fontWeight: FontWeight.w500,
-                  color: task.isOverdue ? _kError : _kTextSecondary)),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: task.isOverdue ? _kError : cs.onSurfaceVariant)),
         ],
       ),
     );
@@ -1021,14 +1068,17 @@ class _BudgetAlertsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Budget Insights',
             style: GoogleFonts.inter(
-                fontSize: 15, fontWeight: FontWeight.w600, color: _kTextPrimary)),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface)),
         const SizedBox(height: 10),
-        ...controller.budgetAlerts.map((alert) => _BudgetAlertRow(alert: alert)),
+        ...controller.budgetAlerts.map((a) => _BudgetAlertRow(alert: a)),
       ],
     );
   }
@@ -1040,12 +1090,11 @@ class _BudgetAlertRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isWarning = alert.severity == 'warning';
-    final barColor = isWarning ? _kWarning : _kAccent;
-    final bgColor  = isWarning ? const Color(0xFFFFFBEB) : const Color(0xFFEFF6FF);
-    final borderColor = isWarning
-        ? _kWarning.withValues(alpha: 0.3)
-        : _kAccent.withValues(alpha: 0.15);
+    final cs         = Theme.of(context).colorScheme;
+    final isWarning  = alert.severity == 'warning';
+    final barColor   = isWarning ? _kWarning : cs.primary;
+    final bgColor    = barColor.withValues(alpha: 0.07);
+    final borderCol  = barColor.withValues(alpha: 0.2);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1053,7 +1102,7 @@ class _BudgetAlertRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: borderCol),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1061,7 +1110,9 @@ class _BudgetAlertRow extends StatelessWidget {
           Row(
             children: [
               Icon(
-                isWarning ? Icons.warning_amber_rounded : Icons.trending_up_rounded,
+                isWarning
+                    ? Icons.warning_amber_rounded
+                    : Icons.trending_up_rounded,
                 size: 14,
                 color: barColor,
               ),
@@ -1069,12 +1120,15 @@ class _BudgetAlertRow extends StatelessWidget {
               Expanded(
                 child: Text(alert.projectName,
                     style: GoogleFonts.inter(
-                        fontSize: 12, fontWeight: FontWeight.w600,
-                        color: _kTextPrimary)),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface)),
               ),
               Text('${(alert.budgetPct * 100).toStringAsFixed(0)}% used',
                   style: GoogleFonts.inter(
-                      fontSize: 11, fontWeight: FontWeight.w600, color: barColor)),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: barColor)),
             ],
           ),
           const SizedBox(height: 8),
@@ -1089,7 +1143,8 @@ class _BudgetAlertRow extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(alert.message,
-              style: GoogleFonts.inter(fontSize: 11, color: _kTextSecondary)),
+              style: GoogleFonts.inter(
+                  fontSize: 11, color: cs.onSurfaceVariant)),
         ],
       ),
     );
@@ -1104,7 +1159,7 @@ class _ActiveProjectsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final projects = controller.activeProjects;
+    final cs = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1113,19 +1168,23 @@ class _ActiveProjectsSection extends StatelessWidget {
             Expanded(
               child: Text('All Projects',
                   style: GoogleFonts.inter(
-                      fontSize: 15, fontWeight: FontWeight.w600,
-                      color: _kTextPrimary)),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface)),
             ),
             GestureDetector(
               onTap: () => Get.toNamed(AppRoutes.myProjects),
               child: Text('View All →',
                   style: GoogleFonts.inter(
-                      fontSize: 12, fontWeight: FontWeight.w500, color: _kAccent)),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: _primaryText(context))),
             ),
           ],
         ),
         const SizedBox(height: 10),
-        ...projects.map((p) => _ProjectListTile(project: p)),
+        ...controller.activeProjects
+            .map((p) => _ProjectListTile(project: p)),
       ],
     );
   }
@@ -1137,25 +1196,35 @@ class _ProjectListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+    final divider = Theme.of(context).dividerColor;
+
     return GestureDetector(
-      onTap: () => Get.toNamed(AppRoutes.projectStageTracker, arguments: project),
+      onTap: () =>
+          Get.toNamed(AppRoutes.projectStageTracker, arguments: project),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: _kCardBg,
+          color: surface,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: const [_kCardShadow],
+          boxShadow: [
+            BoxShadow(
+                color: cs.onSurface.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2)),
+          ],
         ),
         child: Row(
           children: [
             Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
+                color: cs.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.home_outlined, size: 20, color: _kAccent),
+              child: Icon(Icons.home_outlined, size: 20, color: cs.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1164,11 +1233,15 @@ class _ProjectListTile extends StatelessWidget {
                 children: [
                   Text(project.name,
                       style: GoogleFonts.inter(
-                          fontSize: 13, fontWeight: FontWeight.w600,
-                          color: _kTextPrimary)),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface)),
                   const SizedBox(height: 2),
-                  Text('${project.area}, ${project.city}  ·  ${project.currentStage}',
-                      style: GoogleFonts.inter(fontSize: 11, color: _kTextMuted)),
+                  Text(
+                    '${project.area}, ${project.city}  ·  ${project.currentStage}',
+                    style: GoogleFonts.inter(
+                        fontSize: 11, color: cs.onSurfaceVariant),
+                  ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -1178,32 +1251,34 @@ class _ProjectListTile extends StatelessWidget {
                           child: LinearProgressIndicator(
                             value: project.progress,
                             minHeight: 4,
-                            backgroundColor: _kSeparator,
+                            backgroundColor: divider,
                             valueColor:
-                                const AlwaysStoppedAnimation<Color>(_kAccent),
+                                AlwaysStoppedAnimation<Color>(cs.primary),
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text('${project.completionPct.toStringAsFixed(0)}%',
-                          style: GoogleFonts.inter(
-                              fontSize: 11, fontWeight: FontWeight.w600,
-                              color: _kTextPrimary)),
+                      Text(
+                        '${project.completionPct.toStringAsFixed(0)}%',
+                        style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurface),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.chevron_right_rounded, size: 18, color: _kTextMuted),
+            Icon(Icons.chevron_right_rounded,
+                size: 18, color: cs.onSurfaceVariant),
           ],
         ),
       ),
     );
   }
 }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 String _relativeTime(DateTime? dt) {
   if (dt == null) return 'recently';

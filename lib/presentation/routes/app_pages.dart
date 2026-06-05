@@ -70,6 +70,7 @@ import '../../features/settings/views/settings_screen.dart';
 // Profile
 import '../../features/profile/bindings/profile_binding.dart';
 import '../../features/profile/views/profile_screen.dart';
+import '../../features/profile/views/profile_details_screen.dart';
 
 class AppPages {
   static final pages = [
@@ -265,6 +266,12 @@ class AppPages {
     GetPage(
       name: AppRoutes.profile,
       page: () => const ProfileScreen(),
+      binding: ProfileBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.profileDetails,
+      page: () => const ProfileDetailsScreen(),
       binding: ProfileBinding(),
       transition: Transition.rightToLeft,
     ),

@@ -15,7 +15,7 @@ import '../../../presentation/routes/app_routes.dart';
 class ProjectStageTrackerScreen extends GetView<ProjectsController> {
   const ProjectStageTrackerScreen({super.key});
 
-  static const _tabs = ['Stages', 'Photos', 'Budget', 'Labor', 'Documents'];
+  static const _tabs = ['Stages', 'Updates', 'Budget', 'Labor', 'Documents'];
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +54,7 @@ class ProjectStageTrackerScreen extends GetView<ProjectsController> {
           body: TabBarView(
             children: [
               _StagesList(project: project),
-              _PhotosTab(project: project),
+              _UpdatesTab(project: project),
               _BudgetTab(project: project),
               _LaborTab(project: project),
               _DocumentsTab(project: project),
@@ -83,8 +83,10 @@ class _StagesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stages = project.stages as List<StageModel>;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final stages  = project.stages as List<StageModel>;
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+    final divider = Theme.of(context).dividerColor;
 
     return ListView(
       padding: const EdgeInsets.all(AppDimensions.pagePaddingH),
@@ -93,15 +95,13 @@ class _StagesList extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(AppDimensions.base),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.cardDark : AppColors.cardLight,
+            color: surface,
             borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-            border: Border.all(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-            ),
+            border: Border.all(color: divider),
           ),
           child: Row(
             children: [
-              const Icon(Icons.home_outlined, color: AppColors.primary, size: 40),
+              Icon(Icons.home_outlined, color: cs.primary, size: 40),
               const SizedBox(width: AppDimensions.md),
               Expanded(
                 child: Column(
@@ -127,8 +127,8 @@ class _StagesList extends StatelessWidget {
                   '${((project.progress as double) * 100).toStringAsFixed(0)}%',
                   style: AppTextStyles.labelSmall(context),
                 ),
-                progressColor: AppColors.primary,
-                backgroundColor: isDark ? AppColors.borderDark : AppColors.dividerLight,
+                progressColor: cs.primary,
+                backgroundColor: divider,
               ),
             ],
           ),
@@ -147,7 +147,7 @@ class _StageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final divider = Theme.of(context).dividerColor;
 
     return IntrinsicHeight(
       child: Row(
@@ -164,7 +164,7 @@ class _StageRow extends StatelessWidget {
                       width: 2,
                       color: stage.isCompleted
                           ? AppColors.success
-                          : (isDark ? AppColors.borderDark : AppColors.dividerLight),
+                          : divider,
                     ),
                   ),
               ],
@@ -189,48 +189,39 @@ class _StageIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs      = Theme.of(context).colorScheme;
+    final divider = Theme.of(context).dividerColor;
+
     if (stage.isCompleted) {
       return Container(
-        width: 28,
-        height: 28,
+        width: 28, height: 28,
         decoration: const BoxDecoration(
-          color: AppColors.success,
-          shape: BoxShape.circle,
-        ),
+            color: AppColors.success, shape: BoxShape.circle),
         child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
       );
     }
     if (stage.isInProgress) {
       return Container(
-        width: 28,
-        height: 28,
-        decoration: const BoxDecoration(
-          color: AppColors.primary,
-          shape: BoxShape.circle,
-        ),
+        width: 28, height: 28,
+        decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
         child: Center(
           child: Container(
-            width: 10,
-            height: 10,
+            width: 10, height: 10,
             decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
+                color: Colors.white, shape: BoxShape.circle),
           ),
         ),
       );
     }
     return Container(
-      width: 28,
-      height: 28,
+      width: 28, height: 28,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.borderLight, width: 2),
-      ),
+          shape: BoxShape.circle,
+          border: Border.all(color: divider, width: 2)),
       child: Center(
         child: Text(
           '${stage.order}',
-          style: const TextStyle(fontSize: 11, color: AppColors.textTertiaryLight),
+          style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
         ),
       ),
     );
@@ -243,7 +234,9 @@ class _StageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+    final divider = Theme.of(context).dividerColor;
 
     if (stage.isPending) {
       return Padding(
@@ -265,12 +258,12 @@ class _StageContent extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.base),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.cardLight,
+        color: surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         border: Border.all(
           color: stage.isInProgress
-              ? AppColors.primary.withValues(alpha: 0.3)
-              : (isDark ? AppColors.borderDark : AppColors.borderLight),
+              ? cs.primary.withValues(alpha: 0.3)
+              : divider,
           width: stage.isInProgress ? 1.5 : 1,
         ),
       ),
@@ -279,9 +272,11 @@ class _StageContent extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(stage.name, style: AppTextStyles.h4(context))),
+              Expanded(
+                  child: Text(stage.name, style: AppTextStyles.h4(context))),
               if (stage.isInProgress)
-                const AppBadge(label: 'IN PROGRESS', variant: BadgeVariant.inProgress),
+                const AppBadge(
+                    label: 'IN PROGRESS', variant: BadgeVariant.inProgress),
               if (stage.isCompleted)
                 const AppBadge(label: 'DONE', variant: BadgeVariant.completed),
             ],
@@ -296,12 +291,13 @@ class _StageContent extends StatelessWidget {
           if (stage.isInProgress) ...[
             const SizedBox(height: AppDimensions.md),
             ClipRRect(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+              borderRadius:
+                  BorderRadius.circular(AppDimensions.radiusFull),
               child: LinearProgressIndicator(
                 value: stage.progress / 100,
                 minHeight: 6,
-                backgroundColor: isDark ? AppColors.borderDark : AppColors.dividerLight,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                backgroundColor: divider,
+                valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
               ),
             ),
             Align(
@@ -342,32 +338,287 @@ class _StageContent extends StatelessWidget {
   }
 }
 
-// ── Photos tab ────────────────────────────────────────────────────────────────
-class _PhotosTab extends StatelessWidget {
+// ── Updates tab (project-scoped) ─────────────────────────────────────────────
+
+class _UpdatesTab extends StatefulWidget {
   final dynamic project;
-  const _PhotosTab({required this.project});
+  const _UpdatesTab({required this.project});
+
+  @override
+  State<_UpdatesTab> createState() => _UpdatesTabState();
+}
+
+class _UpdatesTabState extends State<_UpdatesTab> {
+  final _updates = <_UpdateEntry>[
+    _UpdateEntry(
+      author: 'Bashir Ahmed', initials: 'BA', role: 'Site Supervisor',
+      text: 'Foundation work completed. Plinth beam started today.',
+      stageName: 'Foundation', date: DateTime.now().subtract(const Duration(hours: 2)),
+    ),
+    _UpdateEntry(
+      author: 'Ahmed Khan', initials: 'AK', role: 'Owner',
+      text: 'Reviewed progress photos. Good work this week.',
+      stageName: null, date: DateTime.now().subtract(const Duration(days: 1)),
+    ),
+    _UpdateEntry(
+      author: 'Bashir Ahmed', initials: 'BA', role: 'Site Supervisor',
+      text: 'Excavation completed. Soil tested. Foundation mark-out done.',
+      stageName: 'Excavation', date: DateTime.now().subtract(const Duration(days: 3)),
+    ),
+  ];
+
+  final _textCtrl = TextEditingController();
+  @override
+  void dispose() { _textCtrl.dispose(); super.dispose(); }
+
+  void _openAddSheet(BuildContext context) {
+    _textCtrl.clear();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      // Let the modal own its appearance — avoids transparent PhysicalShape
+      // layout failure when crossAxisAlignment is loose.
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetCtx) => _AddUpdateSheet(
+        ctrl: _textCtrl,
+        onSubmit: () {
+          if (_textCtrl.text.trim().isEmpty) return;
+          setState(() {
+            _updates.insert(0, _UpdateEntry(
+              author: 'You', initials: 'YO', role: 'Owner',
+              text: _textCtrl.text.trim(),
+              stageName: null, date: DateTime.now(),
+            ));
+          });
+          _textCtrl.clear();
+          Navigator.of(sheetCtx).pop();
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.photo_library_outlined,
-              size: 48, color: AppColors.textTertiaryLight),
-          const SizedBox(height: 12),
-          Text('Project Photos', style: AppTextStyles.h3(context)),
-          const SizedBox(height: 6),
-          Text('Upload progress photos from the site',
-              style: AppTextStyles.bodySmall(context)),
-          const SizedBox(height: 20),
-          OutlinedButton.icon(
-            onPressed: () => Get.toNamed(AppRoutes.photoVideoFeed),
-            icon: const Icon(Icons.photo_library_outlined, size: 16),
-            label: const Text('View All Updates'),
+    return Stack(
+      children: [
+        // Feed list
+        ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          itemCount: _updates.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          itemBuilder: (_, i) => _UpdateCard(entry: _updates[i]),
+        ),
+        // FAB
+        Positioned(
+          right: 20, bottom: 20,
+          child: GestureDetector(
+            onTap: () => _openAddSheet(context),
+            child: Container(
+              width: 52, height: 52,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.35),
+                      blurRadius: 12, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: const Icon(Icons.add_rounded,
+                  color: Colors.white, size: 26),
+            ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _UpdateEntry {
+  final String author, initials, role, text;
+  final String? stageName;
+  final DateTime date;
+  const _UpdateEntry({
+    required this.author, required this.initials, required this.role,
+    required this.text, required this.stageName, required this.date,
+  });
+}
+
+class _UpdateCard extends StatelessWidget {
+  final _UpdateEntry entry;
+  const _UpdateCard({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+    final divider = Theme.of(context).dividerColor;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+        border: Border.all(color: divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              // Avatar
+              Container(
+                width: 34, height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(entry.initials,
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: cs.primary)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(entry.author, style: AppTextStyles.labelLarge(context)),
+                    Text(entry.role,   style: AppTextStyles.caption(context)),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(_relTime(entry.date), style: AppTextStyles.caption(context)),
+                  if (entry.stageName != null) ...[
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: cs.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(entry.stageName!,
+                          style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: cs.primary)),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(entry.text, style: AppTextStyles.bodyMedium(context)),
         ],
       ),
+    );
+  }
+
+  String _relTime(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24)   return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+}
+
+class _AddUpdateSheet extends StatelessWidget {
+  final TextEditingController ctrl;
+  final VoidCallback onSubmit;
+
+  const _AddUpdateSheet({
+    required this.ctrl,
+    required this.onSubmit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // viewInsets.bottom accounts for the soft keyboard height
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      // The modal provides white bg + rounded corners via shape parameter.
+      // We only add internal padding here — no BoxDecoration needed.
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 20 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        // crossAxisAlignment.start — avoids loose-width circular dependency
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                  color: const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Text('Add Update', style: AppTextStyles.h3(context)),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: const Icon(Icons.close_rounded,
+                    color: AppColors.textSecondaryLight),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: ctrl,
+            maxLines: 4,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: "What's happening on site today?",
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                      color: AppColors.borderLight)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                      color: AppColors.primary, width: 1.5)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Photo attach button (fixed size — no flex issues)
+              Container(
+                width: 40, height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundLight,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: const Icon(Icons.attach_file_rounded,
+                    size: 18, color: AppColors.textSecondaryLight),
+              ),
+              AppButton.primary(
+                  label: 'Post Update',
+                  isFullWidth: false,
+                  onPressed: onSubmit,
+                ),
+              ],
+            ),
+          ],
+        ),
     );
   }
 }
@@ -379,7 +630,9 @@ class _BudgetTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+    final divider = Theme.of(context).dividerColor;
     double budget = 0;
     double spent  = 0;
     try {
@@ -394,10 +647,9 @@ class _BudgetTab extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(AppDimensions.base),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.cardDark : AppColors.cardLight,
+            color: surface,
             borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-            border: Border.all(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight),
+            border: Border.all(color: divider),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,7 +662,7 @@ class _BudgetTab extends StatelessWidget {
                     child: _BudgetStat(
                         label: 'Total',
                         value: CurrencyFormatter.formatCompact(budget),
-                        color: AppColors.primary),
+                        color: cs.primary),
                   ),
                   Expanded(
                     child: _BudgetStat(
@@ -422,7 +674,7 @@ class _BudgetTab extends StatelessWidget {
                     child: _BudgetStat(
                         label: 'Left',
                         value: CurrencyFormatter.formatCompact(budget - spent),
-                        color: AppColors.textPrimaryLight),
+                        color: cs.onSurface),
                   ),
                 ],
               ),
@@ -432,10 +684,9 @@ class _BudgetTab extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: pct,
                   minHeight: 8,
-                  backgroundColor:
-                      isDark ? AppColors.borderDark : AppColors.dividerLight,
+                  backgroundColor: divider,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                      pct > 0.8 ? AppColors.error : AppColors.primary),
+                      pct > 0.8 ? AppColors.error : cs.primary),
                 ),
               ),
               const SizedBox(height: 6),
@@ -500,22 +751,27 @@ class _LaborTab extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(AppDimensions.base),
           decoration: BoxDecoration(
-            color: AppColors.infoLight,
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.07),
             borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-            border:
-                Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+            border: Border.all(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.15)),
           ),
           child: Row(
             children: [
-              const Icon(Icons.people_outline, color: AppColors.primary, size: 28),
+              Icon(Icons.people_outline,
+                  color: Theme.of(context).colorScheme.primary, size: 28),
               const SizedBox(width: AppDimensions.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('$workerCount Active Workers',
-                        style: AppTextStyles.h4(context)
-                            .copyWith(color: AppColors.primary)),
+                        style: AppTextStyles.h4(context).copyWith(
+                            color:
+                                Theme.of(context).colorScheme.primary)),
                     Text('Manage attendance and payroll',
                         style: AppTextStyles.caption(context)),
                   ],
@@ -529,7 +785,7 @@ class _LaborTab extends StatelessWidget {
           icon: Icons.people_alt_outlined,
           title: 'Manage Workers',
           subtitle: 'Add, edit or release site workers',
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
           onTap: () => Get.toNamed(AppRoutes.laborList),
         ),
         const SizedBox(height: AppDimensions.md),
@@ -570,22 +826,22 @@ class _LaborActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+    final divider = Theme.of(context).dividerColor;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(AppDimensions.base),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.cardDark : AppColors.cardLight,
+          color: surface,
           borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-          border: Border.all(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight),
+          border: Border.all(color: divider),
         ),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 44, height: 44,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
@@ -602,8 +858,7 @@ class _LaborActionTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.textSecondaryLight),
+            Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
           ],
         ),
       ),

@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuildOS — Formal Product Review Report</title>
+<style>
+  /* ── RESET & BASE ─────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:     #0f2744;
+    --navy2:    #1a3a5c;
+    --blue:     #1e5fa8;
+    --blue-lt:  #e8f0fb;
+    --teal:     #0d7377;
+    --teal-lt:  #e0f5f5;
+    --red:      #c0392b;
+    --red-lt:   #fdecea;
+    --amber:    #d97706;
+    --amber-lt: #fef3c7;
+    --green:    #16a34a;
+    --green-lt: #dcfce7;
+    --gray:     #4b5563;
+    --gray-lt:  #f3f4f6;
+    --border:   #d1d5db;
+    --white:    #ffffff;
+    --ink:      #111827;
+    --ink2:     #374151;
+  }
+
+  html { font-size: 10pt; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: var(--white);
+    line-height: 1.65;
+  }
+
+  /* ── PRINT SETTINGS ───────────────────────────────────── */
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm 16mm;
+    @bottom-center {
+      content: "BuildOS — Formal Product Review Report  |  Page " counter(page) " of " counter(pages);
+      font-size: 8pt;
+      color: #9ca3af;
+    }
+  }
+
+  @media print {
+    .no-print { display: none !important; }
+    body { font-size: 9.5pt; }
+    a { color: inherit; text-decoration: none; }
+
+    .cover { page-break-after: always; }
+    .toc-page { page-break-after: always; }
+    .section-break { page-break-before: always; }
+
+    h2 { page-break-after: avoid; }
+    h3 { page-break-after: avoid; }
+    table { page-break-inside: avoid; }
+    .card { page-break-inside: avoid; }
+    .score-grid { page-break-inside: avoid; }
+  }
+
+  /* ── COVER PAGE ───────────────────────────────────────── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 60px 56px;
+    background: linear-gradient(145deg, var(--navy) 0%, var(--navy2) 60%, #0d2137 100%);
+    color: var(--white);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: rgba(30,95,168,0.25);
+  }
+
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: 40%;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(13,115,119,0.20);
+  }
+
+  .cover-tag {
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #7eb8f7;
+    margin-bottom: 18px;
+  }
+
+  .cover h1 {
+    font-size: 38pt;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--white);
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-subtitle {
+    font-size: 14pt;
+    font-weight: 400;
+    color: #94bce8;
+    margin-bottom: 48px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-divider {
+    width: 72px;
+    height: 4px;
+    background: var(--teal);
+    border-radius: 2px;
+    margin-bottom: 40px;
+  }
+
+  .cover-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-meta-item label {
+    display: block;
+    font-size: 7.5pt;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #7eb8f7;
+    margin-bottom: 2px;
+  }
+
+  .cover-meta-item span {
+    font-size: 10pt;
+    color: #e2eeff;
+    font-weight: 500;
+  }
+
+  .cover-badge-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 48px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 8pt;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.20);
+    color: #d4e8ff;
+  }
+
+  /* ── TABLE OF CONTENTS ────────────────────────────────── */
+  .toc-page {
+    padding: 48px 0 32px;
+  }
+
+  .toc-title {
+    font-size: 20pt;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 28px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--navy);
+  }
+
+  .toc-list { list-style: none; }
+
+  .toc-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 0;
+    margin-bottom: 8px;
+  }
+
+  .toc-list li a {
+    font-size: 10pt;
+    color: var(--ink2);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .toc-list li a:hover { color: var(--blue); }
+
+  .toc-dots {
+    flex: 1;
+    border-bottom: 1px dotted var(--border);
+    margin: 0 8px;
+    min-width: 20px;
+  }
+
+  .toc-num {
+    font-size: 9pt;
+    color: var(--gray);
+    font-weight: 600;
+    min-width: 24px;
+    text-align: right;
+  }
+
+  .toc-section {
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin: 16px 0 6px;
+  }
+
+  .toc-sub {
+    padding-left: 20px;
+  }
+
+  .toc-sub a { font-weight: 400; color: var(--gray); }
+
+  /* ── LAYOUT ───────────────────────────────────────────── */
+  .report-body {
+    padding: 0;
+  }
+
+  /* ── SECTION HEADERS ──────────────────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 22px 24px;
+    background: var(--navy);
+    color: var(--white);
+    border-radius: 10px;
+    margin-bottom: 28px;
+  }
+
+  .section-num {
+    font-size: 9pt;
+    font-weight: 700;
+    background: rgba(255,255,255,0.15);
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .section-header h2 {
+    font-size: 14pt;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: var(--white);
+  }
+
+  /* ── PERSONA BLOCKS ───────────────────────────────────── */
+  .persona-block {
+    margin-bottom: 40px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .persona-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 22px;
+  }
+
+  .persona-icon {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.2);
+  }
+
+  .persona-header-text { flex: 1; }
+
+  .persona-header-text h3 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .persona-header-text p {
+    font-size: 8.5pt;
+    color: rgba(255,255,255,0.8);
+    margin-top: 2px;
+  }
+
+  .persona-body {
+    padding: 22px 24px;
+    background: var(--white);
+  }
+
+  .persona-body p {
+    font-size: 10pt;
+    color: var(--ink2);
+    margin-bottom: 12px;
+    line-height: 1.7;
+  }
+
+  .persona-body p strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .persona-body p:last-child { margin-bottom: 0; }
+
+  .persona-verdict {
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: var(--gray-lt);
+    border-radius: 8px;
+    border-left: 4px solid var(--navy);
+  }
+
+  .persona-verdict p {
+    font-size: 9.5pt;
+    font-style: italic;
+    color: var(--ink);
+    margin: 0;
+    font-weight: 500;
+  }
+
+  /* Persona color themes */
+  .persona-owner .persona-header  { background: linear-gradient(135deg, #1e5fa8, #1a3a5c); }
+  .persona-supervisor .persona-header { background: linear-gradient(135deg, #0d7377, #065f46); }
+  .persona-contractor .persona-header { background: linear-gradient(135deg, #7c3aed, #4c1d95); }
+  .persona-qa .persona-header { background: linear-gradient(135deg, #c0392b, #7f1d1d); }
+
+  /* ── SEVERITY TAGS ────────────────────────────────────── */
+  .sev {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 8pt;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .sev-red    { background: var(--red-lt);   color: var(--red);   }
+  .sev-amber  { background: var(--amber-lt); color: var(--amber); }
+  .sev-green  { background: var(--green-lt); color: var(--green); }
+
+  /* ── BULLET LISTS ─────────────────────────────────────── */
+  .finding-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .finding-list li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 9.5pt;
+    line-height: 1.5;
+    color: var(--ink2);
+  }
+
+  .finding-list li:last-child { border-bottom: none; }
+
+  .finding-list li.red-item   { background: #fff8f8; }
+  .finding-list li.amber-item { background: #fffbf0; }
+  .finding-list li.green-item { background: #f8fff9; }
+
+  .finding-list li .f-text { flex: 1; }
+
+  .finding-list li .f-text strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* ── CONTENT BLOCKS ───────────────────────────────────── */
+  h2.subsection {
+    font-size: 13pt;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 32px 0 16px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--navy);
+  }
+
+  h3.sub2 {
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--blue);
+    margin: 24px 0 12px;
+  }
+
+  h4.sub3 {
+    font-size: 10pt;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 16px 0 8px;
+  }
+
+  p.body-text {
+    font-size: 10pt;
+    color: var(--ink2);
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+
+  /* ── TABLES ───────────────────────────────────────────── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+    margin: 16px 0 24px;
+  }
+
+  .data-table thead tr {
+    background: var(--navy);
+    color: var(--white);
+  }
+
+  .data-table thead th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 8.5pt;
+    letter-spacing: 0.3px;
+  }
+
+  .data-table tbody tr:nth-child(even) { background: var(--gray-lt); }
+  .data-table tbody tr:hover { background: var(--blue-lt); }
+
+  .data-table tbody td {
+    padding: 9px 12px;
+    color: var(--ink2);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  /* ── MARKET BLOCKS ────────────────────────────────────── */
+  .market-block {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 32px;
+    border: 1px solid var(--border);
+  }
+
+  .market-header {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .market-flag { font-size: 20px; }
+
+  .market-header h3 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .market-header p {
+    font-size: 8.5pt;
+    color: rgba(255,255,255,0.8);
+    margin-top: 2px;
+  }
+
+  .market-pk  .market-header { background: linear-gradient(135deg, #1e5fa8 0%, #0f2744 100%); }
+  .market-eu  .market-header { background: linear-gradient(135deg, #1f5f2e 0%, #0e3318 100%); }
+  .market-as  .market-header { background: linear-gradient(135deg, #d97706 0%, #78350f 100%); }
+  .market-sa  .market-header { background: linear-gradient(135deg, #166534 0%, #14532d 100%); }
+
+  .market-body { padding: 20px 22px; background: var(--white); }
+
+  .market-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 9.5pt;
+    color: var(--ink2);
+    line-height: 1.55;
+  }
+
+  .market-item:last-child { border-bottom: none; }
+
+  .market-item .mi-label {
+    font-weight: 700;
+    color: var(--ink);
+    min-width: 160px;
+    flex-shrink: 0;
+  }
+
+  /* ── COMPETITOR BLOCKS ────────────────────────────────── */
+  .comp-block {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .comp-header {
+    background: var(--gray-lt);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comp-header h3 {
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--navy);
+  }
+
+  .comp-header span {
+    font-size: 8pt;
+    color: var(--gray);
+    background: var(--white);
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+
+  .comp-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .comp-col {
+    padding: 16px 18px;
+  }
+
+  .comp-col + .comp-col {
+    border-left: 1px solid var(--border);
+  }
+
+  .comp-col-title {
+    font-size: 8.5pt;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .comp-col-better .comp-col-title { color: var(--red); }
+  .comp-col-worse .comp-col-title  { color: var(--green); }
+
+  .comp-col ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .comp-col ul li {
+    padding: 6px 0;
+    font-size: 9pt;
+    color: var(--ink2);
+    border-bottom: 1px solid #f3f4f6;
+    line-height: 1.5;
+    display: flex;
+    gap: 6px;
+  }
+
+  .comp-col ul li::before { flex-shrink: 0; }
+
+  .comp-col-better ul li::before { content: '✗'; color: var(--red); font-weight: 700; }
+  .comp-col-worse  ul li::before { content: '✓'; color: var(--green); font-weight: 700; }
+
+  /* ── SCORE GRID ───────────────────────────────────────── */
+  .score-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .score-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    position: relative;
+  }
+
+  .score-card-label {
+    font-size: 9pt;
+    font-weight: 600;
+    color: var(--gray);
+    margin-bottom: 4px;
+  }
+
+  .score-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .score-value {
+    font-size: 26pt;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .score-denom {
+    font-size: 12pt;
+    color: var(--gray);
+    font-weight: 400;
+  }
+
+  .score-bar-bg {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .score-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+
+  .score-desc {
+    font-size: 8.5pt;
+    color: var(--ink2);
+    line-height: 1.5;
+  }
+
+  /* Score colour by value */
+  .score-high   { color: var(--green); }
+  .score-mid    { color: var(--amber); }
+  .score-low    { color: var(--red);   }
+
+  .score-high .score-bar-fill { background: var(--green); }
+  .score-mid  .score-bar-fill { background: var(--amber); }
+  .score-low  .score-bar-fill { background: var(--red);   }
+
+  .overall-score {
+    background: var(--navy);
+    color: var(--white);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .overall-num {
+    font-size: 52pt;
+    font-weight: 900;
+    color: #f59e0b;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .overall-denom {
+    font-size: 20pt;
+    color: rgba(255,255,255,0.5);
+    font-weight: 400;
+  }
+
+  .overall-text h3 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+
+  .overall-text p {
+    font-size: 9.5pt;
+    color: rgba(255,255,255,0.8);
+    line-height: 1.6;
+  }
+
+  /* ── PRIORITY LISTS ───────────────────────────────────── */
+  .priority-section {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+  }
+
+  .priority-header {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--white);
+  }
+
+  .priority-header h3 {
+    font-size: 11pt;
+    font-weight: 700;
+  }
+
+  .priority-header p {
+    font-size: 8.5pt;
+    opacity: 0.8;
+    margin-left: auto;
+  }
+
+  .ph-red    { background: linear-gradient(135deg, #c0392b, #7f1d1d); }
+  .ph-amber  { background: linear-gradient(135deg, #d97706, #78350f); }
+  .ph-green  { background: linear-gradient(135deg, #16a34a, #14532d); }
+
+  .priority-body { padding: 4px 0; background: var(--white); }
+
+  .priority-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 9.5pt;
+    color: var(--ink2);
+    line-height: 1.5;
+  }
+
+  .priority-item:last-child { border-bottom: none; }
+
+  .priority-num {
+    font-weight: 700;
+    color: var(--gray);
+    min-width: 22px;
+    font-size: 9pt;
+  }
+
+  .priority-item strong { color: var(--ink); }
+
+  /* ── CALLOUT BOX ──────────────────────────────────────── */
+  .callout {
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-left: 4px solid;
+    font-size: 9.5pt;
+    line-height: 1.65;
+    color: var(--ink2);
+  }
+
+  .callout-blue  { background: var(--blue-lt);  border-color: var(--blue);  }
+  .callout-teal  { background: var(--teal-lt);  border-color: var(--teal);  }
+  .callout-red   { background: var(--red-lt);   border-color: var(--red);   }
+  .callout-amber { background: var(--amber-lt); border-color: var(--amber); }
+  .callout-green { background: var(--green-lt); border-color: var(--green); }
+
+  .callout strong { font-weight: 700; color: var(--ink); }
+
+  /* ── FEATURE GAP TABLE ────────────────────────────────── */
+  .gap-row-red   td { background: #fff8f8; }
+  .gap-row-amber td { background: #fffbf0; }
+  .gap-row-green td { background: #f8fff9; }
+
+  /* ── MISC ─────────────────────────────────────────────── */
+  .section-intro {
+    font-size: 10pt;
+    color: var(--gray);
+    font-style: italic;
+    margin: -12px 0 24px;
+    padding: 12px 18px;
+    background: var(--gray-lt);
+    border-radius: 8px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 7.5pt;
+    font-weight: 600;
+    background: var(--blue-lt);
+    color: var(--blue);
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+
+  .footer-note {
+    font-size: 8pt;
+    color: var(--gray);
+    text-align: center;
+    padding: 24px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+
+  /* ── PRINT BUTTON (screen only) ───────────────────────── */
+  .print-btn-wrap {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 999;
+  }
+
+  .print-btn {
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    padding: 14px 22px;
+    border-radius: 50px;
+    font-size: 10pt;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+
+  .print-btn:hover { background: var(--blue); }
+
+  @media print {
+    .print-btn-wrap { display: none; }
+  }
+
+  /* ── SCREEN WRAPPER ───────────────────────────────────── */
+  @media screen {
+    body { background: #e5e7eb; }
+    .page-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.15);
+    }
+    .cover { padding: 80px 72px; min-height: 600px; }
+    .report-body { padding: 40px 56px; }
+    .toc-page { padding: 48px 56px 32px; }
+  }
+
+  @media print {
+    .page-wrap { max-width: none; box-shadow: none; }
+    .report-body { padding: 0; }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- Print Button -->
+<div class="print-btn-wrap no-print">
+  <button class="print-btn" onclick="window.print()">
+    ⬇ Download PDF
+  </button>
+</div>
+
+<div class="page-wrap">
+
+<!-- ═══════════════════════════════════════════════
+     COVER PAGE
+════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-tag">Formal Product Review &amp; QA Report</div>
+  <h1>BuildOS</h1>
+  <div class="cover-subtitle">Construction Project Management App — Expert Panel Review</div>
+  <div class="cover-divider"></div>
+
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <label>Review Date</label>
+      <span>June 5, 2026</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Report Type</label>
+      <span>Multi-Persona QA &amp; Market Analysis</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Screens Reviewed</label>
+      <span>12 Screens · 6-Step Wizard · 5-Tab Detail</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Reviewer Panel</label>
+      <span>4 Expert Personas</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Target Markets</label>
+      <span>Pakistan · Europe · Asia · Saudi/Gulf</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Overall Score</label>
+      <span>4.4 / 10 — Prototype Stage</span>
+    </div>
+  </div>
+
+  <div class="cover-badge-row">
+    <span class="cover-badge">House Owner Persona</span>
+    <span class="cover-badge">Site Supervisor Persona</span>
+    <span class="cover-badge">Contractor Persona</span>
+    <span class="cover-badge">QA Expert Persona</span>
+    <span class="cover-badge">Feature Gap Analysis</span>
+    <span class="cover-badge">4-Market Analysis</span>
+    <span class="cover-badge">Competitive Benchmarking</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     TABLE OF CONTENTS
+════════════════════════════════════════════════ -->
+<div class="toc-page report-body">
+  <div class="toc-title">Table of Contents</div>
+  <ul class="toc-list">
+
+    <li class="toc-section">Section 1 — Persona Reviews</li>
+    <li class="toc-sub"><a href="#persona-owner">House Owner Review</a><span class="toc-dots"></span><span class="toc-num">3</span></li>
+    <li class="toc-sub"><a href="#persona-supervisor">Site Supervisor Review</a><span class="toc-dots"></span><span class="toc-num">4</span></li>
+    <li class="toc-sub"><a href="#persona-contractor">Contractor / Company Review</a><span class="toc-dots"></span><span class="toc-num">5</span></li>
+    <li class="toc-sub"><a href="#persona-qa">QA Expert Review</a><span class="toc-dots"></span><span class="toc-num">6</span></li>
+
+    <li class="toc-section">Section 2 — Feature Gap Analysis</li>
+    <li class="toc-sub"><a href="#feature-gaps">Complete Feature Gap Table</a><span class="toc-dots"></span><span class="toc-num">9</span></li>
+
+    <li class="toc-section">Section 3 — Market-Specific Analysis</li>
+    <li class="toc-sub"><a href="#market-pk">Pakistan Market</a><span class="toc-dots"></span><span class="toc-num">11</span></li>
+    <li class="toc-sub"><a href="#market-eu">Europe Market</a><span class="toc-dots"></span><span class="toc-num">12</span></li>
+    <li class="toc-sub"><a href="#market-as">Asian Market</a><span class="toc-dots"></span><span class="toc-num">13</span></li>
+    <li class="toc-sub"><a href="#market-sa">Saudi Arabia &amp; Gulf Market</a><span class="toc-dots"></span><span class="toc-num">14</span></li>
+
+    <li class="toc-section">Section 4 — Competitive Benchmarking</li>
+    <li class="toc-sub"><a href="#competitors">Competitor Analysis</a><span class="toc-dots"></span><span class="toc-num">16</span></li>
+
+    <li class="toc-section">Section 5 — Priority Action List</li>
+    <li class="toc-sub"><a href="#priority">Immediate · Short Term · Long Term</a><span class="toc-dots"></span><span class="toc-num">18</span></li>
+
+    <li class="toc-section">Section 6 — Overall Score</li>
+    <li class="toc-sub"><a href="#scores">Score Cards &amp; Final Summary</a><span class="toc-dots"></span><span class="toc-num">20</span></li>
+  </ul>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     REPORT BODY
+════════════════════════════════════════════════ -->
+<div class="report-body">
+
+<!-- ──────────────────────────────────────────────
+     SECTION 1: PERSONA REVIEWS
+─────────────────────────────────────────────── -->
+<div class="section-break" id="section-1">
+<div class="section-header">
+  <span class="section-num">SECTION 1</span>
+  <h2>Persona Reviews</h2>
+</div>
+<p class="section-intro">Four independent expert reviewers — each writing from lived experience, not theory. Reviews cover daily use patterns, friction points, missing features, and emotional trust factors.</p>
+
+
+<!-- PERSONA 1: HOUSE OWNER -->
+<div class="persona-block persona-owner" id="persona-owner">
+  <div class="persona-header">
+    <div class="persona-icon">🏠</div>
+    <div class="persona-header-text">
+      <h3>HOUSE OWNER REVIEW</h3>
+      <p>Non-technical homeowner · PKR 50 lakh project · WhatsApp daily user · Trust-first mindset</p>
+    </div>
+  </div>
+  <div class="persona-body">
+
+    <p>I opened this app because my contractor told me to use it to "track my house." The first screen I saw was a dashboard with a greeting, some numbers, and what looked like a calculator. I thought — okay, let me find my project.</p>
+
+    <p><strong>What went right:</strong> The dashboard does show my project with a progress bar and percentage. I could see something called "Foundation" as the current stage. The card looks clean and professional. I felt like my money was being tracked somewhere.</p>
+
+    <p><strong>What confused me immediately:</strong> The dashboard shows a "Market Prices" section with cement and steel rates. I thought that was very useful — but then I realised these prices never change. They are stuck on whatever was written in the code. If cement goes from PKR 1,100 to PKR 1,400 a bag next month — which happens all the time — this app will still show the old number. This is dangerous. I might make a budget decision based on a wrong price and blame my contractor. This is not a minor issue. This is a trust-killer.</p>
+
+    <p><strong>The calculator confused me.</strong> It has inputs for Marla, floors, and quality. When I entered 10 Marla and pressed calculate, it showed me an estimate. But it gave me a number like "PKR 8,500,000." This is not how Pakistani people think about money. We say "85 lakh." The app should say "PKR 85 Lakh" — not a raw number with seven digits. I had to count the zeroes. This is embarrassing for an app targeting Pakistan.</p>
+
+    <p><strong>Finding my project:</strong> There is a bottom bar with Home, Projects, Settings. I went to Projects. I saw my project card. It showed the stage, a progress bar, status badge, and "last updated 2 days ago." Good. But when I tapped it, I went to a detail screen with five tabs: Stages, Updates, Budget, Labor, Documents. The Budget tab showed a number for "total budget" and "spent" — but I could not see what the money was actually spent on. I need proof: 10 bags of cement, 3 trips of retta, labour for 5 days. Without that, I do not trust anything.</p>
+
+    <p><strong>Photos:</strong> There is a Documents tab but I could not upload or view photos from a clean start. There was no gallery of site photos. My contractor sends me photos on WhatsApp every day. I need those photos inside the app, tagged by stage, so I can see the progression. Right now this feels like a skeleton with no flesh.</p>
+
+    <p><strong>The Updates tab:</strong> I could see some text updates listed. But I cannot tell — did my supervisor write this, or did someone else? There is no clear verification of who posted what. Anyone could write "Foundation 80% complete" and I would believe it. I need photo-backed updates. Text alone means nothing on a construction site.</p>
+
+    <p><strong>Stage approval — the most important missing thing:</strong> I expected to be able to say "I approve this stage — release the payment." That button does not exist. This is the single most important feature for a Pakistani homeowner. We pay in instalments tied to stages. There is no button to approve, no button to release payment, no button to dispute. This app cannot replace the trust conversation I need with my contractor.</p>
+
+    <p><strong>What would make me uninstall it:</strong> If I see the market prices are wrong, or if a budget number does not match what my contractor said, I will uninstall it within a week. The app needs to be honest. Right now it is showing me data it cannot prove.</p>
+
+    <p><strong>What would make me trust it:</strong> Stage-by-stage photo evidence. A payment approval button linked to a milestone. An audit trail of who did what and when. The ability to share a progress report on WhatsApp with one tap. None of these exist today.</p>
+
+    <div class="persona-verdict">
+      <p>Verdict: The design is beautiful. The bones are there. But for PKR 50 lakh on the line, beauty is not enough. I need proof and control.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- PERSONA 2: SITE SUPERVISOR -->
+<div class="persona-block persona-supervisor" id="persona-supervisor">
+  <div class="persona-header">
+    <div class="persona-icon">🦺</div>
+    <div class="persona-header-text">
+      <h3>SITE SUPERVISOR REVIEW</h3>
+      <p>On-site every morning · Dusty phone · Slow internet · 15+ workers to manage daily</p>
+    </div>
+  </div>
+  <div class="persona-body">
+
+    <p>My morning starts at 7:30 AM. Sun is out. Workers are arriving. I need to mark attendance in two minutes before I start checking materials.</p>
+
+    <p><strong>Marking attendance:</strong> I opened the app, went to the Labor tab inside my project, then found "Attendance." A grid opened with my 15 workers. Each worker has a row — name, role, daily wage. For each day there are small colored boxes: P (green), A (red), ½ (yellow), OT (purple), L (gray). I tap a box and it cycles through statuses. This is good. This is fast. I liked this.</p>
+
+    <p><strong>But there is no "Mark All Present" button.</strong> Every day I have to tap 15 boxes one by one for the same day. If I have 25 workers — which is common on a mid-size project — that is 25 taps just to say everyone is here. On a busy morning, with a phone call coming in, and a truck of bricks arriving, I do not have time for 25 taps. I need one button: "Mark all present for today."</p>
+
+    <p><strong>Uploading a photo:</strong> I went to the project detail screen. There is a Documents tab. I could not find an obvious "Upload Photo" button. There was mention of a photo vault. But the flow to upload a progress photo — the most common thing I do every day — is not clear or fast. It should be on the home screen of the project: a big camera button. Tap, take photo, tag it to a stage, done. Right now I would have to navigate into tabs to find it. Too slow.</p>
+
+    <p><strong>Updating a stage:</strong> On the Stages tab, I can see stage cards with progress. But I could not find where I update the progress percentage myself. Can I drag a slider to say "Foundation is now 75%"? Can I tap a button to mark it complete? The UI shows the progress visually but the editing interface is not clear. This is a problem — updating stage progress is my most important daily task.</p>
+
+    <p><strong>Offline use:</strong> I work in areas where internet drops. There is no indication the app saves locally when I lose signal. If I mark 15 workers' attendance and the internet drops when I hit Save — does it save locally and sync later? There is no indicator of this. I would be afraid to trust the data.</p>
+
+    <p><strong>Weather and delays:</strong> We had rain last week and lost 3 working days. There is nowhere in the app to log a weather delay or force majeure event. The timeline just moves on as if nothing happened. I need to be able to say "Work stopped: rain, 3 days" and have it adjust the timeline automatically.</p>
+
+    <p><strong>Material delivery:</strong> When a truck of retta (sand/gravel) arrives, I need to log: quantity, supplier, price, payment method (cash). There is no material delivery log. I confirmed this by checking all tabs. This is a major daily task that is completely absent.</p>
+
+    <p><strong>What I need that is not there:</strong> Site diary / daily log; material receipt log with quantity and price; weather/stoppage log; quick-add task or checklist for daily site checks; offline-first data entry.</p>
+
+    <div class="persona-verdict">
+      <p>Verdict: The attendance grid is genuinely good and I would use it. But it covers maybe 20% of what I actually do on site each day. The other 80% — materials, delays, site diary, photos — is missing or buried.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- PERSONA 3: CONTRACTOR -->
+<div class="persona-block persona-contractor" id="persona-contractor">
+  <div class="persona-header">
+    <div class="persona-icon">🏗</div>
+    <div class="persona-header-text">
+      <h3>CONTRACTOR / COMPANY REVIEW</h3>
+      <p>Managing 5 active projects · PKR 3 crore in active construction · Clients calling daily</p>
+    </div>
+  </div>
+  <div class="persona-body">
+
+    <p>I opened the app and navigated to Projects. I saw a list of five project cards — each with a status badge, progress bar, and location. The filter chips (All, Active, Completed, On Hold) are there. This is a reasonable starting point.</p>
+
+    <p><strong>What I immediately needed and could not find:</strong></p>
+
+    <p><strong>Cross-project budget dashboard:</strong> I manage PKR 3 crore in active construction across 5 projects. I need a single view that shows me: Project A — Budget PKR 80L, Spent PKR 55L, Remaining PKR 25L. There is no such view. The dashboard shows one "hero project" and has some alerts, but there is no consolidated multi-project financial overview. For a contractor, this is not optional — it is how I run my business.</p>
+
+    <p><strong>Client report generation:</strong> Every two weeks, my clients expect a progress report. Can this app generate a PDF progress report? No. Not visible anywhere. Even a basic PDF with project name, current stage, progress %, recent photos, and budget summary would save me hours every week.</p>
+
+    <p><strong>Supervisor assignment and activity tracking:</strong> I have three supervisors managing different projects. I need to see — is Supervisor Arshad active on Project B today? Did he upload any photos? Did he update the stage? There is no supervisor activity feed or accountability dashboard. I cannot track my team from inside this app.</p>
+
+    <p><strong>Billing and invoicing:</strong> When a stage is complete, I need to invoice my client. There is no invoice generation, no payment received tracking, no outstanding amount tracking per project. This is basic contractor workflow and it is entirely absent.</p>
+
+    <p><strong>Material procurement across projects:</strong> Can I see that I am buying cement for Project A and B this week, and compare prices? No. Can I track which supplier I use most? No. This level of procurement visibility does not exist.</p>
+
+    <p><strong>What is partially useful:</strong> The stage-based timeline in the wizard is good for planning. The labor attendance grid is useful. The settings allow currency selection. But as a contractor running a business, this app today is a project diary — not a business management tool.</p>
+
+    <div class="persona-verdict">
+      <p>Verdict: For a solo owner-builder tracking his own house, this app works at a basic level. For a contractor managing multiple clients and projects — it is missing the commercial layer entirely.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- PERSONA 4: QA EXPERT -->
+<div class="persona-block persona-qa" id="persona-qa">
+  <div class="persona-header">
+    <div class="persona-icon">🔬</div>
+    <div class="persona-header-text">
+      <h3>QA EXPERT REVIEW</h3>
+      <p>Senior mobile QA engineer · Systematic · Edge cases · Exhaustive findings</p>
+    </div>
+  </div>
+  <div class="persona-body">
+
+    <h4 class="sub3">A — Functional Bugs &amp; Gaps</h4>
+    <ul class="finding-list">
+      <li class="red-item"><span class="sev sev-red">🔴 Critical</span><span class="f-text"><strong>Search not wired</strong> — The search bar in My Projects screen has no <code>onChanged</code> handler. Typing in it does nothing. This is a broken feature shipping to users.</span></li>
+      <li class="red-item"><span class="sev sev-red">🔴 Critical</span><span class="f-text"><strong>Market prices are hard-coded</strong> — Dashboard shows cement, steel, brick prices but they never update. Showing stale financial data is a product integrity failure.</span></li>
+      <li class="red-item"><span class="sev sev-red">🔴 Critical</span><span class="f-text"><strong>PKR number formatting incorrect</strong> — <code>PKR 8,500,000</code> is shown instead of <code>PKR 85 Lakh</code>. Budget cards, calculator outputs, and expense figures all have this issue throughout the entire app.</span></li>
+      <li class="red-item"><span class="sev sev-red">🔴 Critical</span><span class="f-text"><strong>No data persistence layer</strong> — All project, labor, update, and expense data is mocked. Closing and reopening the app loses all user-entered data. App is non-functional as a real product.</span></li>
+      <li class="red-item"><span class="sev sev-red">🔴 Critical</span><span class="f-text"><strong>Stage progress editing not exposed</strong> — Stages tab shows progress visually but there is no UI element allowing a supervisor to update percentage or mark a stage complete.</span></li>
+      <li class="red-item"><span class="sev sev-red">🔴 Critical</span><span class="f-text"><strong>No photo upload flow</strong> — Despite having a Documents tab and a Photos reference in the stage tracker, there is no functional camera/gallery upload pathway. Core feature is absent.</span></li>
+      <li class="red-item"><span class="sev sev-red">🔴 Critical</span><span class="f-text"><strong>Stage edit UI incomplete in wizard Step 6</strong> — <code>editModeActive</code> flag exists in controller but no UI for drag-and-drop reordering. Feature is advertised but not implemented.</span></li>
+      <li class="red-item"><span class="sev sev-red">🔴 Critical</span><span class="f-text"><strong>No start date picker in wizard</strong> — <code>startDate</code> defaults to <code>DateTime.now()</code> with no date picker shown. The generated timeline cannot be adjusted.</span></li>
+      <li class="red-item"><span class="sev sev-red">🔴 Critical</span><span class="f-text"><strong>Save not wired on Profile Details</strong> — The save button exists and shows a loading state but is not connected to any persistence. Changes are lost on navigation.</span></li>
+      <li class="red-item"><span class="sev sev-red">🔴 Critical</span><span class="f-text"><strong>Biometric / 2FA toggles non-functional</strong> — Settings screen allows toggling these but no actual authentication integration exists. Security UI is decorative.</span></li>
+      <li class="red-item"><span class="sev sev-red">🔴 Critical</span><span class="f-text"><strong>Project handover accessible on incomplete projects</strong> — Navigation allows accessing the handover screen on an in-progress project with no guard.</span></li>
+      <li class="red-item"><span class="sev sev-red">🔴 Critical</span><span class="f-text"><strong>Handover checklist is hard-coded</strong> — Always shows 6/6 complete regardless of actual project state. Not connected to real stage data.</span></li>
+    </ul>
+
+    <h4 class="sub3">B — Missing States</h4>
+    <ul class="finding-list">
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>No loading state on My Projects</strong> — When projects are loading there is no skeleton or spinner shown.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>No error state on any screen</strong> — If an API call fails, no screen has an error card with retry action.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Empty state on Photos tab absent</strong> — No "Upload your first photo" prompt when no photos exist.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Empty state on Updates tab missing</strong> — No prompt to "Post the first project update."</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Empty state on Budget tab missing</strong> — If no expenses are logged, there is no onboarding instruction or call to action.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>No offline indicator</strong> — App shows no badge or banner when the user is offline.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>No sync status indicator</strong> — No "last synced X minutes ago" visible anywhere to give users data confidence.</span></li>
+    </ul>
+
+    <h4 class="sub3">C — Validation Gaps</h4>
+    <ul class="finding-list">
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Wizard step validation shows no per-field errors</strong> — Validation returns a boolean but never highlights which specific field failed. User sees nothing explaining why "Next" did not work.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Budget field accepts any number</strong> — No minimum, no maximum, no formatting. A user can enter 0 or a negative number without error.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Area field has no minimum value check</strong> — A 0 Marla plot is technically accepted by the wizard.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Phone number field has no format validation</strong> — Pakistani numbers (03xx-xxxxxxx) vs international (+92) format not enforced or clarified.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Delete account "type DELETE" has no mismatch feedback</strong> — Typing "delete" (lowercase) gives no explanation that it must match exactly.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Overtime hours have no daily cap</strong> — Can log 24+ hours of overtime per day per worker without validation error.</span></li>
+    </ul>
+
+    <h4 class="sub3">D — UX Inconsistencies</h4>
+    <ul class="finding-list">
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>No back-navigation confirmation in wizard</strong> — User in Step 4 can accidentally press back and lose Step 1–3 inputs without any warning dialog.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>"Member Since · June 2026" is hard-coded</strong> — Profile details screen shows a fixed string regardless of actual registration date.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Verification badges in Profile not functional</strong> — "Phone Verified," "Email Verified," "CNIC Verified" are decorative with no actual verification flow.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Rating stat in Profile is static</strong> — Shows a star rating with no mechanism to earn or update it. Users cannot understand where it comes from.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Project count and Update count in Profile are not dynamic</strong> — Always show the same number regardless of actual project data.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Documents tab is a placeholder</strong> — Exists in Stage Tracker but links to a "vault" that is not implemented. Shows a dead end to users.</span></li>
+    </ul>
+
+    <h4 class="sub3">E — Accessibility Issues</h4>
+    <ul class="finding-list">
+      <li class="green-item"><span class="sev sev-green">🟢 Minor</span><span class="f-text"><strong>No Semantics labels on icon-only buttons</strong> — Camera overlay on avatar and quick action icons have no screen reader accessible labels.</span></li>
+      <li class="green-item"><span class="sev sev-green">🟢 Minor</span><span class="f-text"><strong>Small tap targets on attendance grid cells</strong> — On smaller Android devices, attendance status cells may fall below the 48×48dp minimum recommended tap target.</span></li>
+      <li class="green-item"><span class="sev sev-green">🟢 Minor</span><span class="f-text"><strong>No font scaling tests evident</strong> — Large font accessibility mode may break layouts in wizard steps with dense content.</span></li>
+      <li class="green-item"><span class="sev sev-green">🟢 Minor</span><span class="f-text"><strong>Hard-coded colors bypass theme system</strong> — <code>_kActive</code>, <code>_kWarning</code> constants may not meet contrast requirements in dark mode edge cases.</span></li>
+    </ul>
+
+    <h4 class="sub3">F — Performance Risks</h4>
+    <ul class="finding-list">
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>No pagination on project list</strong> — Contractors with 50+ projects will load all simultaneously with no virtual scrolling.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>No debounce on search input</strong> — Will fire a filter computation on every keystroke when search is wired up.</span></li>
+      <li class="amber-item"><span class="sev sev-amber">🟡 Important</span><span class="f-text"><strong>Large widget tree in dashboard (1,290 lines)</strong> — Dashboard is a single massive widget. Scrolling performance on low-end Android devices is a risk.</span></li>
+      <li class="green-item"><span class="sev sev-green">🟢 Minor</span><span class="f-text"><strong>No lazy loading planned for photo gallery</strong> — When implemented, loading full-res images without lazy loading and caching will cause memory issues on mid-range devices.</span></li>
+    </ul>
+
+  </div>
+</div>
+</div><!-- end section 1 -->
+
+
+<!-- ──────────────────────────────────────────────
+     SECTION 2: FEATURE GAP ANALYSIS
+─────────────────────────────────────────────── -->
+<div class="section-break" id="feature-gaps">
+<div class="section-header">
+  <span class="section-num">SECTION 2</span>
+  <h2>Feature Gap Analysis</h2>
+</div>
+<p class="section-intro">Features that are completely absent from the app but are essential for a construction management product. Each entry includes severity and the primary persona most affected.</p>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>Why It Is Needed</th>
+      <th>Severity</th>
+      <th>Primary Persona</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="gap-row-red">
+      <td><strong>Photo upload with stage tagging</strong></td>
+      <td>Core daily task for supervisors; core trust signal for owners. Without it the app has no visual proof of work.</td>
+      <td><span class="sev sev-red">🔴 Critical</span></td>
+      <td>Site Supervisor</td>
+    </tr>
+    <tr class="gap-row-red">
+      <td><strong>Stage progress editing (% slider / milestone tap)</strong></td>
+      <td>Supervisors cannot update work done without this. Showing progress without the ability to update it is meaningless.</td>
+      <td><span class="sev sev-red">🔴 Critical</span></td>
+      <td>Site Supervisor</td>
+    </tr>
+    <tr class="gap-row-red">
+      <td><strong>Owner stage approval + payment release</strong></td>
+      <td>Pakistani owners pay by milestone. Approval is the trust mechanism. Without this the payment relationship is invisible.</td>
+      <td><span class="sev sev-red">🔴 Critical</span></td>
+      <td>House Owner</td>
+    </tr>
+    <tr class="gap-row-red">
+      <td><strong>Live market prices API</strong></td>
+      <td>Hard-coded prices create false financial decisions. Stale price data is a liability, not a feature.</td>
+      <td><span class="sev sev-red">🔴 Critical</span></td>
+      <td>House Owner</td>
+    </tr>
+    <tr class="gap-row-red">
+      <td><strong>Backend &amp; data persistence</strong></td>
+      <td>App loses all data on restart. Cannot be used as a real product without this foundation.</td>
+      <td><span class="sev sev-red">🔴 Critical</span></td>
+      <td>All</td>
+    </tr>
+    <tr class="gap-row-red">
+      <td><strong>PKR lakh/crore number formatting</strong></td>
+      <td>Standard Pakistani financial notation. Current format (raw integers) is alien and untrustworthy to target users.</td>
+      <td><span class="sev sev-red">🔴 Critical</span></td>
+      <td>House Owner</td>
+    </tr>
+    <tr class="gap-row-red">
+      <td><strong>Material delivery / purchase log</strong></td>
+      <td>Supervisors log every material delivery. This is the most common financial transaction on a Pakistani site. Entirely absent.</td>
+      <td><span class="sev sev-red">🔴 Critical</span></td>
+      <td>Site Supervisor</td>
+    </tr>
+    <tr class="gap-row-red">
+      <td><strong>PDF / shareable progress report</strong></td>
+      <td>Contractors and owners share reports. WhatsApp-friendly export is table stakes for the Pakistan market.</td>
+      <td><span class="sev sev-red">🔴 Critical</span></td>
+      <td>Contractor</td>
+    </tr>
+    <tr class="gap-row-red">
+      <td><strong>Payment milestone tracking</strong></td>
+      <td>Pakistani construction is instalment-based. Payment per stage is the norm. No milestone tracking means no trust tracking.</td>
+      <td><span class="sev sev-red">🔴 Critical</span></td>
+      <td>House Owner / Contractor</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Multi-project financial dashboard</strong></td>
+      <td>Contractors need consolidated budget view across all projects. Cannot run a business without this.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>Contractor</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Offline-first data entry with sync</strong></td>
+      <td>Supervisors in low connectivity areas cannot use app reliably. Attendance and material logs must work offline.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>Site Supervisor</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>"Mark all present" bulk action</strong></td>
+      <td>15–30 workers daily. Individual tapping is too slow for morning attendance in a busy site context.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>Site Supervisor</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Weather / stoppage delay log</strong></td>
+      <td>Rain, Eid, holidays stop work. Timeline must reflect this. Without it, all timelines become inaccurate.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>Site Supervisor</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Site daily diary</strong></td>
+      <td>Formal record of daily work, visitors, decisions, incidents. Standard construction management practice.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>Site Supervisor / Contractor</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Invoice / billing generation</strong></td>
+      <td>Contractors invoice clients at stage completion. No invoicing means no commercial workflow.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>Contractor</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Supervisor assignment and tracking</strong></td>
+      <td>Contractors need to assign and monitor supervisors per project. Accountability requires this visibility.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>Contractor</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>WhatsApp one-tap share</strong></td>
+      <td>WhatsApp is the dominant communication channel. Progress sharing must be one tap, not a manual process.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>All</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Push notifications for stage updates</strong></td>
+      <td>Owner needs to be notified when supervisor updates a stage or marks a milestone complete.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>House Owner</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Defect / snagging list</strong></td>
+      <td>Pre-handover punch list for unfinished or defective items. Standard in all markets, especially Europe.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>All</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Drawing / document upload per project</strong></td>
+      <td>Site drawings, LDA approvals, contracts need to be stored against each project. Documents tab is a placeholder.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>Contractor</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Bill of Quantities (BOQ)</strong></td>
+      <td>Standard contractor tool in India, Gulf, and formal Pakistan market for itemising scope and cost per trade.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>Contractor</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Worker profile / CNIC storage</strong></td>
+      <td>Basic labor compliance. Required for Pakistan (CNIC) and Gulf (Iqama/passport) markets.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>Contractor</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Payroll report / slip generation</strong></td>
+      <td>Weekly or monthly payroll summary for workers and accountant. Currently only wage calculation exists, no output.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>Contractor</td>
+    </tr>
+    <tr class="gap-row-amber">
+      <td><strong>Budget vs actual tracking per stage</strong></td>
+      <td>Owners want to see if Foundation cost more than planned. Total vs total is not enough granularity.</td>
+      <td><span class="sev sev-amber">🟡 Important</span></td>
+      <td>House Owner</td>
+    </tr>
+    <tr class="gap-row-green">
+      <td><strong>In-app messaging / comments</strong></td>
+      <td>Eliminate WhatsApp dependency for project communication. Keep all project discussion in one place.</td>
+      <td><span class="sev sev-green">🟢 Minor</span></td>
+      <td>All</td>
+    </tr>
+    <tr class="gap-row-green">
+      <td><strong>Permit / approval tracking (LDA/KDA/CDA)</strong></td>
+      <td>Pakistani homeowners track drawing submissions and approval status. Simple status fields would suffice.</td>
+      <td><span class="sev sev-green">🟢 Minor</span></td>
+      <td>Contractor</td>
+    </tr>
+    <tr class="gap-row-green">
+      <td><strong>Subcontractor management</strong></td>
+      <td>Large projects use multiple specialist subcontractors separate from direct labor. India and Gulf especially.</td>
+      <td><span class="sev sev-green">🟢 Minor</span></td>
+      <td>Contractor</td>
+    </tr>
+    <tr class="gap-row-green">
+      <td><strong>Equipment / machinery rental tracking</strong></td>
+      <td>Crane, concrete mixer, generator rental — daily cost tracking is needed for accurate project costing.</td>
+      <td><span class="sev sev-green">🟢 Minor</span></td>
+      <td>Contractor</td>
+    </tr>
+    <tr class="gap-row-green">
+      <td><strong>Warranty and post-handover maintenance log</strong></td>
+      <td>After the house is built, track warranties on fittings and appliances. Increases long-term app retention.</td>
+      <td><span class="sev sev-green">🟢 Minor</span></td>
+      <td>House Owner</td>
+    </tr>
+  </tbody>
+</table>
+</div><!-- end section 2 -->
+
+
+<!-- ──────────────────────────────────────────────
+     SECTION 3: MARKET-SPECIFIC ANALYSIS
+─────────────────────────────────────────────── -->
+<div class="section-break" id="section-3">
+<div class="section-header">
+  <span class="section-num">SECTION 3</span>
+  <h2>Market-Specific Analysis</h2>
+</div>
+<p class="section-intro">Four markets analysed independently. Each section evaluates local context fit: units, currency, labour practices, regulations, language, and user behaviour.</p>
+
+<!-- PAKISTAN -->
+<div class="market-block market-pk" id="market-pk">
+  <div class="market-header">
+    <span class="market-flag">🇵🇰</span>
+    <div>
+      <h3>Pakistan Market</h3>
+      <p>Lahore · Karachi · Islamabad · Marla/Kanal · PKR · Mazdoor/Mistry/Thekedar model</p>
+    </div>
+  </div>
+  <div class="market-body">
+    <div class="market-item"><span class="mi-label">Plot size units (Marla/Kanal)</span><span>Marla and Kanal are included in the wizard — this is correct intent. However, local nuance is missing: in Lahore, 1 Marla = 272.25 sq ft, but in some older LDA schemes it is 225 sq ft. The app uses a single conversion factor and will produce wrong area calculations for older scheme users. The app needs to either ask which Marla standard applies or disclose the conversion being used.</span></div>
+    <div class="market-item"><span class="mi-label">PKR number formatting</span><span><span class="sev sev-red">🔴 Critical</span> Budget amounts are displayed as raw integers: <code>8,500,000</code>. Pakistani users say "85 lakh." All PKR amounts must format as <code>PKR 85 Lakh</code> above 100,000 and <code>PKR 1.2 Crore</code> above 10,000,000. Every budget card, calculator output, and expense entry has this issue.</span></div>
+    <div class="market-item"><span class="mi-label">Labour model</span><span>The attendance grid supports daily wage workers with Sat–Thu grid — appropriate for the market. However, the thekedar (labour contractor) model is entirely absent. A thekedar charges per unit of work (per 1,000 bricks laid, per cubic foot of concrete) — fundamentally different from daily wages. Lump-sum milestone payments to a thekedar have no support in the app.</span></div>
+    <div class="market-item"><span class="mi-label">LDA/CDA/KDA permit tracking</span><span>No support exists. Pakistani homeowners track drawing submission to LDA, approval status, and penalty payments for deviations. A simple document stage with status fields (Submitted / Under Review / Approved / Rejected) and date fields is the minimum requirement. Entirely absent.</span></div>
+    <div class="market-item"><span class="mi-label">Material purchase log (retta, bajri, cement, bricks)</span><span><span class="sev sev-red">🔴 Critical</span> No material log exists. A supervisor receives a truck of retta and must log: date, quantity (cubic feet or trucks), supplier, price per unit, payment method (cash/bank), receipt photo. This workflow does not exist. Pakistani materials are bought from local mandis in cash — no support for cash purchase logging.</span></div>
+    <div class="market-item"><span class="mi-label">Payment milestone / instalment system</span><span><span class="sev sev-red">🔴 Critical</span> Pakistani owners pay contractors in instalments tied to stages: 20% on foundation, 20% on roof, etc. There is no payment milestone feature. The budget tab shows total spent vs total budget but does not track how much has been paid to the contractor against which stage.</span></div>
+    <div class="market-item"><span class="mi-label">Urdu language support</span><span>The settings screen has an English/Urdu toggle — intent is present. However, hard-coded strings throughout the app (widget labels, hints, tooltips) will not be translated by a toggle alone. A thorough i18n audit is required before the toggle is exposed to users, or it will appear broken to Urdu-first users.</span></div>
+    <div class="market-item"><span class="mi-label">WhatsApp sharing</span><span>No "Share Update on WhatsApp" button exists anywhere. WhatsApp is the default communication channel for Pakistani construction. Sharing a progress summary — current stage, %, a photo, and a budget figure — must be one tap. This is the single most-requested UX feature this market will demand.</span></div>
+    <div class="market-item"><span class="mi-label">Trust and verification</span><span>The Pakistani market is defined by fundamental lack of trust between owner and contractor. Missing: contractor CNIC verification, contractor rating by past clients, photo-required before stage completion, and owner sign-off before payment release. The app currently assumes good faith on all sides, which is not realistic for this market.</span></div>
+    <div class="market-item"><span class="mi-label">Informal economy (cash)</span><span>Cash payments are dominant. No cash payment log, no receipt photo upload for cash purchases, no informal agreement tracking. The app assumes a formal digital payment infrastructure that does not match Pakistani reality.</span></div>
+  </div>
+</div>
+
+<!-- EUROPE -->
+<div class="market-block market-eu" id="market-eu">
+  <div class="market-header">
+    <span class="market-flag">🇪🇺</span>
+    <div>
+      <h3>Europe Market</h3>
+      <p>UK · Germany · France · Spain · sq metres · EUR/GBP · Formal contracts · Strict regulation</p>
+    </div>
+  </div>
+  <div class="market-body">
+    <div class="market-item"><span class="mi-label">Square metre units</span><span>The wizard supports sq metre — correct. However, it is not confirmed that all area-based calculations default to sq metres when a European country is selected. This should be validated and enforced automatically by country selection.</span></div>
+    <div class="market-item"><span class="mi-label">VAT tracking</span><span><span class="sev sev-red">🔴 Critical for EU launch</span> No VAT tracking exists anywhere. In the UK, VAT on construction is complex (new builds at 0%, renovations at 20%). In Germany, MwSt at 19% applies. Every expense must have a VAT field. Any invoice must separate net/gross and VAT amount. Without this, no European contractor can use this app for business.</span></div>
+    <div class="market-item"><span class="mi-label">Formal contract upload</span><span>No contract module exists. In Europe, written contracts are legally required. At minimum, the app must allow uploading a signed contract PDF stored against the project. Contract generation is advanced, but document storage is the minimum.</span></div>
+    <div class="market-item"><span class="mi-label">Building permit tracking</span><span>UK building regulations, German Baugenehmigung, French permis de construire — all require tracking application date, approval date, reference number, and associated documents. No permit tracking module exists.</span></div>
+    <div class="market-item"><span class="mi-label">Health &amp; Safety checklists</span><span><span class="sev sev-red">🔴 Critical for EU/UK launch</span> UK CDM 2015 regulations require a health and safety file. EU Construction Site Directive 92/57/EEC mandates H&amp;S planning. No safety checklists, no incident log, no daily safety briefing record. Selling this app to a UK/EU contractor without these creates legal liability.</span></div>
+    <div class="market-item"><span class="mi-label">Snagging list</span><span>The snagging (defect) list is a standard final-stage deliverable in UK and European construction. Before handover, every defect is listed, photographed, assigned a responsible party, and signed off. The Handover screen exists but shows a static 6/6 checklist — no dynamic snagging list.</span></div>
+    <div class="market-item"><span class="mi-label">CDM compliance (UK)</span><span>No Principal Designer or Principal Contractor fields. No health and safety file section. No F10 notification equivalent. UK market is effectively inaccessible without CDM support.</span></div>
+    <div class="market-item"><span class="mi-label">Contractor certification fields</span><span>European clients expect contractor insurance, Gas Safe (UK), NICEIC, or trade body membership. No certificate or insurance document fields exist in contractor profile or project team section.</span></div>
+    <div class="market-item"><span class="mi-label">GDPR compliance</span><span><span class="sev sev-red">🔴 Legal requirement for EU launch</span> No GDPR consent, no data processing statement, no right-to-erasure workflow. Delete Account flow exists but no confirmation that all user data is permanently erased within 30 days as GDPR requires. Shipping in Europe without this is legally non-compliant.</span></div>
+    <div class="market-item"><span class="mi-label">Professional reporting</span><span>European clients expect structured reports: schedule of works, cost plan, cash flow projection, variation orders. None of these reporting formats exist. The app produces no formal output documents of any kind.</span></div>
+  </div>
+</div>
+
+<!-- ASIA -->
+<div class="market-block market-as" id="market-as">
+  <div class="market-header">
+    <span class="market-flag">🌏</span>
+    <div>
+      <h3>Asian Market</h3>
+      <p>India · Bangladesh · Sri Lanka · Southeast Asia · sq ft · INR Lakh/Crore · GST · RERA</p>
+    </div>
+  </div>
+  <div class="market-body">
+    <div class="market-item"><span class="mi-label">Square feet support</span><span>The wizard supports sq ft — good for India. The four-tier quality system (1,400–7,000 per sq ft) is broadly aligned with Indian market rates. However, rates vary dramatically by city (tier-2 city vs Mumbai) and the ranges need market-calibration per region.</span></div>
+    <div class="market-item"><span class="mi-label">Indian number formatting</span><span><span class="sev sev-red">🔴 Critical for India launch</span> Indian users read <code>85,00,000</code> as "85 lakh" and expect <code>₹85 Lakh</code> in all displays. The Indian number system uses lakh/crore grouping. Without this, the app will feel foreign and untrustworthy to Indian users.</span></div>
+    <div class="market-item"><span class="mi-label">GST tracking</span><span>India's GST applies to construction services (18% on contractor fees) and materials (cement at 28%, steel at 18%). No GST field exists on any expense or invoice. For any Indian contractor filing GST returns, this app is unusable as a financial tool.</span></div>
+    <div class="market-item"><span class="mi-label">RERA compliance</span><span>The Real Estate (Regulation and Development) Act requires builders to register projects and disclose timelines and specifications. A "RERA registration number" field and document upload section would be basic compliance support. Entirely absent.</span></div>
+    <div class="market-item"><span class="mi-label">Monsoon and weather delay tracking</span><span>India, Bangladesh, Sri Lanka, and Southeast Asia all have defined monsoon seasons (June–September) that halt outdoor construction. The app's timeline has no concept of planned work stoppages for monsoon, festivals (Diwali, Puja, Eid), or cyclone-prone shutdowns. Timeline accuracy is fundamentally unreliable for these markets without this.</span></div>
+    <div class="market-item"><span class="mi-label">Multilingual roadmap</span><span>Hindi (India), Bengali (Bangladesh/India), Tamil (India/Sri Lanka), Bahasa Indonesia, Tagalog. The app currently has English and Urdu. For meaningful penetration in India or Southeast Asia, at minimum Hindi support is needed. No multilingual expansion roadmap is indicated.</span></div>
+    <div class="market-item"><span class="mi-label">Local material types</span><span>Indian materials include fly-ash bricks, AAC blocks, river sand, M-sand, TMT bars, OPC/PPC cement. Bangladesh uses bamboo scaffolding and different brick standards. Southeast Asia has typhoon-resistant design considerations. Material tracking (when built) needs local material taxonomies.</span></div>
+    <div class="market-item"><span class="mi-label">BOQ (Bill of Quantities)</span><span>India's formal construction market heavily uses BOQ — a detailed itemised list of quantities and costs for every trade. Larger developers, PMCs, and institutional clients require BOQ-based procurement. This feature is entirely absent and is the most significant gap for the Indian professional market.</span></div>
+    <div class="market-item"><span class="mi-label">Multiple subcontractors</span><span>Indian construction uses multiple specialist subcontractors (civil, electrical, plumbing, HVAC, tiles, woodwork). Managing them separately from direct labour is essential. The app's team section allows one contractor type selection and does not support multiple simultaneous subcontractors.</span></div>
+  </div>
+</div>
+
+<!-- SAUDI/GULF -->
+<div class="market-block market-sa" id="market-sa">
+  <div class="market-header">
+    <span class="market-flag">🇸🇦</span>
+    <div>
+      <h3>Saudi Arabia &amp; Gulf Market</h3>
+      <p>KSA · UAE · Qatar · Kuwait · SAR/AED · sq metres · Expat workforce · Vision 2030</p>
+    </div>
+  </div>
+  <div class="market-body">
+    <div class="market-item"><span class="mi-label">SAR / AED currency</span><span>Gulf countries are included in the CountryInfo list with local currencies. Settings allow currency selection. However, SAR formatting (<code>ر.س 150,000</code>) needs correct Arabic numeral and RTL formatting when in Arabic mode. This alignment is not confirmed in the current code.</span></div>
+    <div class="market-item"><span class="mi-label">Square metres as default</span><span>The Gulf uses sq metres exclusively. Marla and Kanal are meaningless here. When Saudi Arabia or UAE is selected as the country, the unit system must automatically default to sq metres with no Marla/Kanal option shown. This automatic contextual adjustment is not confirmed in the code.</span></div>
+    <div class="market-item"><span class="mi-label">Arabic RTL support</span><span><span class="sev sev-red">🔴 Critical for Gulf launch</span> The settings screen has English/Urdu only — no Arabic option. RTL layout requires fundamental Flutter <code>Directionality</code> support throughout the entire app. The current codebase shows no RTL-aware layout widgets. This is not a simple translation — it requires layout rework across all screens. Without Arabic RTL, this app cannot compete in the Gulf market.</span></div>
+    <div class="market-item"><span class="mi-label">Expat labour management (Iqama/visa)</span><span><span class="sev sev-red">🔴 Critical for Gulf launch</span> The Gulf construction workforce is almost entirely expatriate. Each worker has an Iqama (residency permit) with an expiry date. Contractors are legally required to track visa and Iqama validity. A worker with an expired Iqama on site creates significant legal exposure. The app tracks name, role, and daily wage — no Iqama number, visa type, nationality, passport, or expiry date fields exist.</span></div>
+    <div class="market-item"><span class="mi-label">Islamic finance considerations</span><span>Murabaha and Ijara financing structures are used in KSA for construction. Zakat is a religious obligation on business wealth. No Islamic finance fields, no Zakat calculation, and no Shariah-compliant payment structure support. Even a simple "payment type" field (cash / bank transfer / Murabaha) would show market awareness.</span></div>
+    <div class="market-item"><span class="mi-label">Saudi Building Code / municipality permits</span><span>Saudi Arabia's SBC became mandatory in 2015. Riyadh and Jeddah municipalities require building permits (ruhsat). No permit tracking fields exist. For a serious Saudi contractor, this is the minimum requirement for document management.</span></div>
+    <div class="market-item"><span class="mi-label">Vision 2030 project categories</span><span>Smart home features, energy efficiency certification (Saudi Green Building Rating), and solar integration are increasingly required on new Saudi residential projects. There are no project category tags or feature fields for these specifications.</span></div>
+    <div class="market-item"><span class="mi-label">IBAN bank transfer records</span><span>Saudi Arabia and UAE use IBAN for all business bank transfers. Payment records should store IBAN, bank name, and transfer reference number. The app has no payment record model at all — cash or digital.</span></div>
+    <div class="market-item"><span class="mi-label">Villa construction specifics</span><span>The dominant residential type in KSA is the detached villa. "Villa" project type exists in the wizard (correct). However, Saudi villas typically include basement, family roof terrace, driver/servant quarters, majlis (formal reception), and a women's reception space. None of these are in the room/space type field options. The wizard's Villa type needs Saudi-specific customisation.</span></div>
+    <div class="market-item"><span class="mi-label">Bilingual Arabic/English interface</span><span>Saudi professional environments are bilingual. Contracts and official communications are in Arabic; day-to-day app use may be in English for expatriate supervisors. A seamless per-session language switch is required — not a global app-level toggle only.</span></div>
+  </div>
+</div>
+</div><!-- end section 3 -->
+
+
+<!-- ──────────────────────────────────────────────
+     SECTION 4: COMPETITIVE BENCHMARKING
+─────────────────────────────────────────────── -->
+<div class="section-break" id="competitors">
+<div class="section-header">
+  <span class="section-num">SECTION 4</span>
+  <h2>Competitive Benchmarking</h2>
+</div>
+<p class="section-intro">For each competitor: three things they do better than BuildOS, and three things BuildOS could do better than them. Honest assessment only.</p>
+
+<div class="comp-block">
+  <div class="comp-header">
+    <h3>Buildertrend</h3>
+    <span>USA · Professional Contractor Platform</span>
+  </div>
+  <div class="comp-cols">
+    <div class="comp-col comp-col-better">
+      <div class="comp-col-title">They do better than BuildOS</div>
+      <ul>
+        <li>Client portal with real-time transparency — clients log in and see daily logs, photos, budget updates in a dedicated, read-only view. BuildOS has no separate client portal.</li>
+        <li>Integrated bidding and proposals — generates professional client proposals with itemised line items, markup, and digital signature. BuildOS has no proposal or bidding module.</li>
+        <li>Full subcontractor management with lien waivers, PO generation, and document management per subcontractor. BuildOS has no subcontractor model at all.</li>
+      </ul>
+    </div>
+    <div class="comp-col comp-col-worse">
+      <div class="comp-col-title">BuildOS could do better</div>
+      <ul>
+        <li>Local market fit for emerging markets — Buildertrend is US-centric (dollar, sq ft, US regulations). BuildOS's multi-country, multi-unit, multi-currency wizard is architecturally more flexible.</li>
+        <li>Mobile-first UX — Buildertrend's mobile app is a cut-down version of its web platform. BuildOS is designed mobile-first with a cleaner, more modern Material 3 UI.</li>
+        <li>Affordability positioning — Buildertrend starts at $499/month. BuildOS has the opportunity to price for Pakistan, India, and Gulf markets at a fraction of this cost.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="comp-block">
+  <div class="comp-header">
+    <h3>CoConstruct</h3>
+    <span>USA · Custom Home Builder Tool</span>
+  </div>
+  <div class="comp-cols">
+    <div class="comp-col comp-col-better">
+      <div class="comp-col-title">They do better than BuildOS</div>
+      <ul>
+        <li>Owner/client communication hub — every decision, selection, and change order is communicated through a structured thread with the homeowner. BuildOS has no structured owner communication workflow.</li>
+        <li>Selection management — clients make product selections (flooring, tiles, fixtures) with budget impact shown live. BuildOS has no selection or specification module.</li>
+        <li>Change order management — formal change orders with cost impact, client approval, and full tracking history. BuildOS has no change order concept whatsoever.</li>
+      </ul>
+    </div>
+    <div class="comp-col comp-col-worse">
+      <div class="comp-col-title">BuildOS could do better</div>
+      <ul>
+        <li>Wizard-based project setup — CoConstruct's setup is complex and requires training. BuildOS's 6-step guided wizard with 18 project types and auto-generated timeline is more accessible for first-time users.</li>
+        <li>Labor attendance grid — CoConstruct has no daily labor attendance with wage calculation. BuildOS's attendance grid is a genuine differentiator for markets with daily-wage workforces.</li>
+        <li>Mobile attendance and field entry — CoConstruct is web-centric. BuildOS's mobile attendance grid with haptic feedback is better suited for on-site use in challenging conditions.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="comp-block">
+  <div class="comp-header">
+    <h3>Procore</h3>
+    <span>USA · Enterprise Construction Management</span>
+  </div>
+  <div class="comp-cols">
+    <div class="comp-col comp-col-better">
+      <div class="comp-col-title">They do better than BuildOS</div>
+      <ul>
+        <li>Document management and BIM integration — Procore stores drawings, RFIs, submittals, and integrates with BIM software. BuildOS has a document placeholder tab only.</li>
+        <li>Formal quality and safety tools — dedicated inspection checklists, safety incident reports, and photo-documented punchlist tools. BuildOS has none of these.</li>
+        <li>Financial management depth — full accounting integration (QuickBooks, Sage), budget vs actual by cost code, and commitment tracking per subcontractor. BuildOS's budget tab is a summary card.</li>
+      </ul>
+    </div>
+    <div class="comp-col comp-col-worse">
+      <div class="comp-col-title">BuildOS could do better</div>
+      <ul>
+        <li>Accessibility for small projects — Procore is enterprise-only and priced accordingly. BuildOS targets the sub-PKR 1 crore renovation and house market where Procore would never be considered.</li>
+        <li>Onboarding simplicity — Procore requires dedicated training. BuildOS's wizard gets a new project set up in minutes with no training required.</li>
+        <li>Market relevance in South Asia and MENA — Procore is US/Western-focused. BuildOS is designed with Pakistan, Gulf, and South Asian market nuances built in from day one.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="comp-block">
+  <div class="comp-header">
+    <h3>Contractor+</h3>
+    <span>USA · Freelance Contractor App</span>
+  </div>
+  <div class="comp-cols">
+    <div class="comp-col comp-col-better">
+      <div class="comp-col-title">They do better than BuildOS</div>
+      <ul>
+        <li>Invoice and payment collection — generates professional invoices, accepts card payments, and tracks payment status per job. BuildOS has no invoicing at all.</li>
+        <li>Client digital signature on job completion — built-in signature collection for work approval. BuildOS has no signature or approval workflow.</li>
+        <li>Time tracking per job — tracks billable hours per project with accurate timesheets. BuildOS's labour module tracks attendance but not billable hours in a commercial sense.</li>
+      </ul>
+    </div>
+    <div class="comp-col comp-col-worse">
+      <div class="comp-col-title">BuildOS could do better</div>
+      <ul>
+        <li>Multi-stage project management — Contractor+ is optimised for day jobs and small repairs. BuildOS handles multi-month, multi-stage construction projects with timeline and budget planning far better.</li>
+        <li>Labour team management — BuildOS's attendance grid for teams of 15+ workers is far more relevant than Contractor+'s solo-tradesperson time tracking model.</li>
+        <li>Market localisation — Contractor+ is US-focused. BuildOS's unit/currency/country flexibility positions it better for South Asia and MENA markets from the start.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="comp-block">
+  <div class="comp-header">
+    <h3>Zameen / Bayut</h3>
+    <span>Pakistan / Gulf · Property Portals (UX reference)</span>
+  </div>
+  <div class="comp-cols">
+    <div class="comp-col comp-col-better">
+      <div class="comp-col-title">They do better than BuildOS</div>
+      <ul>
+        <li>Trust signalling for Pakistan/Gulf users — seller verification, agent ratings, and "verified listing" badges. Pakistani users are trained to look for these signals. BuildOS has no equivalent verification system.</li>
+        <li>WhatsApp CTA integration — "Contact on WhatsApp" is prominently featured throughout. This is table stakes for Pakistan/Gulf mobile UX. BuildOS has zero WhatsApp integration.</li>
+        <li>Photo gallery UX — swipe gallery, thumbnail strips, fullscreen — sets the expectation level for Pakistani property app users. BuildOS's photo tab is a placeholder with no equivalent experience.</li>
+      </ul>
+    </div>
+    <div class="comp-col comp-col-worse">
+      <div class="comp-col-title">BuildOS could do better</div>
+      <ul>
+        <li>Project management depth — Zameen/Bayut are listing platforms, not management tools. BuildOS's construction tracking has no equivalent in these platforms and addresses an entirely different need.</li>
+        <li>Cost estimation — BuildOS's quick estimator gives users actionable construction cost data. Neither Zameen nor Bayut offer this for under-construction scenarios.</li>
+        <li>Labour and progress tracking — the entire construction management layer is unique to BuildOS and represents a genuinely different product category.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="callout callout-teal">
+  <strong>Local Pakistani Market Note:</strong> No established, widely-adopted dedicated construction project management app exists for Pakistan as of this review. The closest competitors are informal: WhatsApp groups, Excel spreadsheets, and paper-based attendance registers. BuildOS's biggest competitor in Pakistan is not another app — it is the status quo. This is both a strategic opportunity and a design challenge: the app must feel genuinely easier than sending a WhatsApp photo, or adoption will fail.
+</div>
+
+</div><!-- end section 4 -->
+
+
+<!-- ──────────────────────────────────────────────
+     SECTION 5: PRIORITY ACTION LIST
+─────────────────────────────────────────────── -->
+<div class="section-break" id="priority">
+<div class="section-header">
+  <span class="section-num">SECTION 5</span>
+  <h2>Priority Action List</h2>
+</div>
+<p class="section-intro">Prioritised by severity and impact. Immediate items block launch. Short-term items drive retention. Long-term items drive market expansion.</p>
+
+<div class="priority-section">
+  <div class="priority-header ph-red">
+    <h3>🔴 IMMEDIATE — Must Fix Before Launch</h3>
+    <p>These block a production launch</p>
+  </div>
+  <div class="priority-body">
+    <div class="priority-item"><span class="priority-num">1.</span><span><strong>Wire the search bar</strong> — My Projects search input has no handler. A broken, non-functional UI element must not ship to users.</span></div>
+    <div class="priority-item"><span class="priority-num">2.</span><span><strong>Implement PKR / INR lakh-crore number formatting</strong> — All money values must display in local notation throughout every screen. This is a trust and usability failure in its current state.</span></div>
+    <div class="priority-item"><span class="priority-num">3.</span><span><strong>Build stage progress update UI</strong> — Supervisors need a way to update stage percentage and mark stages complete. This is the app's core value proposition and it is missing.</span></div>
+    <div class="priority-item"><span class="priority-num">4.</span><span><strong>Implement photo upload flow</strong> — Stage-tagged photo upload with camera/gallery picker. This is a core daily feature and it is absent.</span></div>
+    <div class="priority-item"><span class="priority-num">5.</span><span><strong>Add data persistence and backend integration</strong> — Projects, attendance, and updates must persist across sessions. App is non-functional as a real product without this foundation.</span></div>
+    <div class="priority-item"><span class="priority-num">6.</span><span><strong>Remove hard-coded handover checklist</strong> — Handover screen must reflect actual stage completion, not a fake 6/6 that is always shown as complete.</span></div>
+    <div class="priority-item"><span class="priority-num">7.</span><span><strong>Block handover access on incomplete projects</strong> — A navigation guard is required to prevent accessing handover on an in-progress project.</span></div>
+    <div class="priority-item"><span class="priority-num">8.</span><span><strong>Add start date picker in wizard Step 4</strong> — The generated timeline is meaningless without allowing users to set the actual start date.</span></div>
+    <div class="priority-item"><span class="priority-num">9.</span><span><strong>Add per-field validation errors in wizard</strong> — Cannot ship a 6-step form where validation failure is silent. Each field must show its own error.</span></div>
+    <div class="priority-item"><span class="priority-num">10.</span><span><strong>Add budget vs actual tracking per stage</strong> — Total budget vs total spent is insufficient. Cost breakdown per stage is the minimum granularity owners need.</span></div>
+    <div class="priority-item"><span class="priority-num">11.</span><span><strong>Fix hard-coded market prices</strong> — Connect to an API or add a last-updated timestamp with manual refresh. Do not display stale financial data as live data.</span></div>
+    <div class="priority-item"><span class="priority-num">12.</span><span><strong>Wire Profile Details Save button</strong> — Profile edits must persist to storage. The current save button is decorative.</span></div>
+  </div>
+</div>
+
+<div class="priority-section">
+  <div class="priority-header ph-amber">
+    <h3>🟡 SHORT TERM — Within First 3 Months Post-Launch</h3>
+    <p>These drive retention and core user satisfaction</p>
+  </div>
+  <div class="priority-body">
+    <div class="priority-item"><span class="priority-num">1.</span><span><strong>Payment milestone / instalment tracking per stage</strong> — Stage-approval linked to payment release. The single most important trust feature for the Pakistan market.</span></div>
+    <div class="priority-item"><span class="priority-num">2.</span><span><strong>WhatsApp one-tap share</strong> — Progress summary (stage, %, latest photo, budget snapshot) shareable to WhatsApp from the project detail screen.</span></div>
+    <div class="priority-item"><span class="priority-num">3.</span><span><strong>Material purchase / delivery log</strong> — Date, material name, quantity, unit, price, supplier, payment method (cash/bank), receipt photo upload.</span></div>
+    <div class="priority-item"><span class="priority-num">4.</span><span><strong>Bulk attendance actions</strong> — "Mark all present for today" button saves critical time for supervisors managing large teams every morning.</span></div>
+    <div class="priority-item"><span class="priority-num">5.</span><span><strong>Weather and delay log</strong> — Log work stoppages with reason and duration; timeline must auto-adjust affected stages.</span></div>
+    <div class="priority-item"><span class="priority-num">6.</span><span><strong>Offline-first attendance entry with sync queue</strong> — Critical for field use. Data must survive connectivity loss and sync when reconnected.</span></div>
+    <div class="priority-item"><span class="priority-num">7.</span><span><strong>Multi-project financial dashboard</strong> — Consolidated budget and spend overview across all active projects for contractor users.</span></div>
+    <div class="priority-item"><span class="priority-num">8.</span><span><strong>PDF progress report export</strong> — Project name, stage, percentage, recent photos, budget summary. Minimum viable report for client communication.</span></div>
+    <div class="priority-item"><span class="priority-num">9.</span><span><strong>Supervisor assignment per project</strong> — Contractor assigns supervisor; supervisor sees only their assigned projects. Accountability requires this separation.</span></div>
+    <div class="priority-item"><span class="priority-num">10.</span><span><strong>Push notifications for stage updates and alerts</strong> — Owner notified when supervisor updates progress or marks a stage complete.</span></div>
+    <div class="priority-item"><span class="priority-num">11.</span><span><strong>Loading, error, and offline states on all screens</strong> — No screen should show nothing when data is loading, unavailable, or the device is offline.</span></div>
+    <div class="priority-item"><span class="priority-num">12.</span><span><strong>Worker profile fields (CNIC, phone, joining date)</strong> — Basic labour compliance record for Pakistan. Minimum required fields for any formal labour registry.</span></div>
+    <div class="priority-item"><span class="priority-num">13.</span><span><strong>Thekedar / piece-rate labour model</strong> — Labour contractor model alongside daily wage. Different payment structure (per unit of work, lump sum milestones).</span></div>
+    <div class="priority-item"><span class="priority-num">14.</span><span><strong>LDA/CDA permit tracking (basic)</strong> — Document stage with status (Submitted/Approved/Rejected) and date fields per project.</span></div>
+    <div class="priority-item"><span class="priority-num">15.</span><span><strong>Defect / snagging list feature</strong> — Photo-backed punch list before handover. Required for all markets.</span></div>
+    <div class="priority-item"><span class="priority-num">16.</span><span><strong>Back-navigation confirmation in wizard</strong> — Alert dialog before discarding wizard progress to prevent accidental data loss.</span></div>
+    <div class="priority-item"><span class="priority-num">17.</span><span><strong>Working phone OTP and email verification</strong> — The verification badges in Profile must be functional, not decorative.</span></div>
+    <div class="priority-item"><span class="priority-num">18.</span><span><strong>GDPR compliance audit before any EU-facing launch</strong> — Data processing disclosure, consent, and right-to-erasure workflow must exist before European users sign up.</span></div>
+  </div>
+</div>
+
+<div class="priority-section">
+  <div class="priority-header ph-green">
+    <h3>🟢 LONG TERM — Roadmap (6–12 Months)</h3>
+    <p>These drive market expansion and competitive differentiation</p>
+  </div>
+  <div class="priority-body">
+    <div class="priority-item"><span class="priority-num">1.</span><span><strong>Arabic RTL interface</strong> — Full bidirectional layout support for Gulf markets. Requires layout rework, not just translation.</span></div>
+    <div class="priority-item"><span class="priority-num">2.</span><span><strong>Hindi language support</strong> — Minimum requirement for meaningful India market penetration.</span></div>
+    <div class="priority-item"><span class="priority-num">3.</span><span><strong>GST / VAT tracking on expenses</strong> — India (18% GST on services), UK/EU (20% VAT). Required for contractor financial compliance in both markets.</span></div>
+    <div class="priority-item"><span class="priority-num">4.</span><span><strong>BOQ (Bill of Quantities) module</strong> — Itemised scope and cost breakdown for India and Gulf professional contractors.</span></div>
+    <div class="priority-item"><span class="priority-num">5.</span><span><strong>Invoice and payment collection</strong> — Invoice generation, payment received tracking, and outstanding balance management per project.</span></div>
+    <div class="priority-item"><span class="priority-num">6.</span><span><strong>Client portal view</strong> — Dedicated read-only owner view without supervisor editing controls. Separate login or view-only access mode.</span></div>
+    <div class="priority-item"><span class="priority-num">7.</span><span><strong>Subcontractor management</strong> — Multiple specialist subcontractors per project with separate payment tracking. Critical for India and Gulf.</span></div>
+    <div class="priority-item"><span class="priority-num">8.</span><span><strong>Iqama / visa expiry tracking for workers</strong> — Gulf labour compliance requirement. Contractor legal liability depends on this.</span></div>
+    <div class="priority-item"><span class="priority-num">9.</span><span><strong>RERA compliance document support</strong> — India market. Registration number field and required document upload per project.</span></div>
+    <div class="priority-item"><span class="priority-num">10.</span><span><strong>CDM health and safety module</strong> — UK market. Health and safety file, incident log, daily briefing record.</span></div>
+    <div class="priority-item"><span class="priority-num">11.</span><span><strong>Change order management</strong> — Formal scope change with cost impact calculation and owner approval workflow.</span></div>
+    <div class="priority-item"><span class="priority-num">12.</span><span><strong>Contractor rating and reputation system</strong> — Trust layer for owner-contractor relationship. Verified ratings from past project owners.</span></div>
+    <div class="priority-item"><span class="priority-num">13.</span><span><strong>Local payment gateway integration</strong> — JazzCash, Easypaisa (Pakistan); Paytm/UPI (India); STC Pay (KSA). In-app payment recording and milestone release.</span></div>
+    <div class="priority-item"><span class="priority-num">14.</span><span><strong>Analytics dashboard for contractors</strong> — Project completion rates, budget accuracy trends, labour efficiency over time.</span></div>
+    <div class="priority-item"><span class="priority-num">15.</span><span><strong>Monsoon and seasonal shutdown planning</strong> — Weather-aware timeline scheduling with regional presets for South Asia.</span></div>
+    <div class="priority-item"><span class="priority-num">16.</span><span><strong>Equipment / machinery rental tracking</strong> — Daily cost logging for rented equipment (crane, mixer, generator) with rental period and total cost.</span></div>
+    <div class="priority-item"><span class="priority-num">17.</span><span><strong>Payroll slip generation</strong> — Printable weekly/monthly worker wage slip for individual workers and project accountant.</span></div>
+    <div class="priority-item"><span class="priority-num">18.</span><span><strong>Warranty and post-handover maintenance module</strong> — For homeowners after project completion. Increases long-term app retention and lifetime value.</span></div>
+  </div>
+</div>
+
+</div><!-- end section 5 -->
+
+
+<!-- ──────────────────────────────────────────────
+     SECTION 6: OVERALL SCORE
+─────────────────────────────────────────────── -->
+<div class="section-break" id="scores">
+<div class="section-header">
+  <span class="section-num">SECTION 6</span>
+  <h2>Overall Score</h2>
+</div>
+<p class="section-intro">Each category scored out of 10 with a 2–3 sentence justification. Scores reflect current state of the product, not potential.</p>
+
+<div class="score-grid">
+
+  <div class="score-card score-mid">
+    <div class="score-card-label">UX &amp; Design Quality</div>
+    <div class="score-value-row">
+      <span class="score-value">7.5</span>
+      <span class="score-denom">/ 10</span>
+    </div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:75%"></div></div>
+    <div class="score-desc">The visual design is clean, modern, and consistent. Material 3 is applied well, the colour system is coherent, and screen layouts are generally intuitive. The score is held back by small attendance grid tap targets, a near-complete absence of empty and error states across most screens, and the mismatch between the app's polished look and many non-functional interactive elements (search, save, biometrics) that silently do nothing when tapped.</div>
+  </div>
+
+  <div class="score-card score-low">
+    <div class="score-card-label">Feature Completeness</div>
+    <div class="score-value-row">
+      <span class="score-value">3.5</span>
+      <span class="score-denom">/ 10</span>
+    </div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:35%"></div></div>
+    <div class="score-desc">The app covers a significant surface area — wizard, stages, budget, labour, settings — but most features are either UI shells without logic or missing the core workflow that makes them useful. Photo upload is absent. Stage editing is absent. Payment milestones are absent. Material logs are absent. The attendance grid is the most complete functional feature. The app is better described as a high-quality prototype than a complete product.</div>
+  </div>
+
+  <div class="score-card score-mid">
+    <div class="score-card-label">Pakistan Market Fit</div>
+    <div class="score-value-row">
+      <span class="score-value">5.5</span>
+      <span class="score-denom">/ 10</span>
+    </div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:55%"></div></div>
+    <div class="score-desc">The app shows clear Pakistan-first intention: Marla/Kanal units, Urdu toggle, PKR currency, Sat–Thursday work week, Lahore market prices. These are meaningful signals. However, broken PKR number formatting, the absent thekedar labour model, missing payment milestone system, non-functional WhatsApp sharing, and the absence of LDA approval tracking mean the app does not yet meet the practical daily needs of its primary target user.</div>
+  </div>
+
+  <div class="score-card score-low">
+    <div class="score-card-label">Europe Market Fit</div>
+    <div class="score-value-row">
+      <span class="score-value">2.0</span>
+      <span class="score-denom">/ 10</span>
+    </div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:20%"></div></div>
+    <div class="score-desc">This app is not ready for the European market. GDPR compliance is absent, VAT tracking is missing, health and safety checklists are not present, building permit tracking does not exist, the snagging list is absent, and professional report formats used by European contractors are not supported. The UI quality would appeal to European users, but the regulatory and workflow gaps make it legally and commercially unsuitable.</div>
+  </div>
+
+  <div class="score-card score-low">
+    <div class="score-card-label">Asian Market Fit</div>
+    <div class="score-value-row">
+      <span class="score-value">4.0</span>
+      <span class="score-denom">/ 10</span>
+    </div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:40%"></div></div>
+    <div class="score-desc">India and South Asia have some alignment — sq ft support, quality-tier estimation, basic multi-country setup. However, Indian lakh/crore formatting is wrong, GST tracking is absent, RERA compliance is not supported, the BOQ module is missing, and monsoon delay tracking is absent. The app is closer to India market readiness than Europe, but still requires significant localisation work before it can be offered commercially.</div>
+  </div>
+
+  <div class="score-card score-low">
+    <div class="score-card-label">Saudi / Gulf Market Fit</div>
+    <div class="score-value-row">
+      <span class="score-value">2.5</span>
+      <span class="score-denom">/ 10</span>
+    </div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:25%"></div></div>
+    <div class="score-desc">The Gulf has sq metre support and currency selection, and the Villa project type is present. But Arabic RTL is absent, Iqama/visa tracking for expat workers is missing, Saudi Building Code permit tracking does not exist, IBAN payment records are absent, and the bilingual interface required for Gulf professional use is not available. Without Arabic RTL, the app cannot realistically target the Gulf market beyond the English-speaking expatriate minority.</div>
+  </div>
+
+  <div class="score-card score-low">
+    <div class="score-card-label">Technical Robustness</div>
+    <div class="score-value-row">
+      <span class="score-value">4.0</span>
+      <span class="score-denom">/ 10</span>
+    </div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:40%"></div></div>
+    <div class="score-desc">The architecture is well-structured (GetX, feature modules, clean bindings, 40+ named routes) and the Flutter code shows good patterns. However, the complete absence of a data persistence layer, no API integration, no error handling, no offline support, and widespread mocked data means the underlying robustness of a shipped product cannot be evaluated — because the product is not yet functional beyond the UI layer.</div>
+  </div>
+
+  <div class="score-card score-mid">
+    <div class="score-card-label">Competitive Positioning</div>
+    <div class="score-value-row">
+      <span class="score-value">5.5</span>
+      <span class="score-denom">/ 10</span>
+    </div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:55%"></div></div>
+    <div class="score-desc">The app is well-positioned in concept: it targets a genuinely underserved market, has a thoughtful multi-market unit/currency system, and offers better mobile-first UX than established Western competitors. However, it currently lacks the functional depth to compete with even lightweight competitors like Contractor+, and has no market differentiation beyond UI quality until the core missing features are built.</div>
+  </div>
+
+</div><!-- end score grid -->
+
+<div class="overall-score">
+  <div>
+    <span class="overall-num">4.4</span>
+    <span class="overall-denom">/ 10</span>
+  </div>
+  <div class="overall-text">
+    <h3>Overall Score — Prototype Stage</h3>
+    <p>BuildOS is a genuinely well-designed construction management app at the prototype stage — the UI is polished, the architecture is thoughtful, and the market opportunity is real. However, it is currently a beautiful interface in front of an empty room: the core features that would make a Pakistani homeowner trust it with PKR 50 lakh, a site supervisor depend on it every morning, or a contractor run his business through it are either absent or non-functional. The app needs a full persistence and backend layer, the critical workflows of photo-backed stage updates and payment milestone approvals, and correct local number formatting before it can be placed in front of a real user.</p>
+  </div>
+</div>
+
+<div class="callout callout-blue">
+  <strong>Path to Market Leadership:</strong> Once the foundation is in place, this platform has genuine potential to become the first serious construction management tool built for Pakistan and the broader South Asian and Gulf markets — a space that established Western competitors have largely ignored and that currently has no dominant local player. The path to market leadership is clear. The work required to get there is substantial. The opportunity to be first, however, is still open.
+</div>
+
+</div><!-- end section 6 -->
+
+<div class="footer-note">
+  BuildOS — Formal Product Review Report · Generated June 5, 2026 · Four-Persona Expert Panel Review ·
+  For internal product team use only. Do not distribute externally without redaction.
+</div>
+
+</div><!-- end report-body -->
+</div><!-- end page-wrap -->
+
+</body>
+</html>

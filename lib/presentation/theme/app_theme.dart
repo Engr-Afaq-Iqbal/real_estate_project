@@ -7,38 +7,39 @@ import 'app_dimensions.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get light => _buildTheme(Brightness.light);
-  static ThemeData get dark => _buildTheme(Brightness.dark);
+  // ── Static getters (used for initial app launch with default color) ────────
+  static ThemeData get light => _build(Brightness.light, AppColors.primary);
+  static ThemeData get dark  => _build(Brightness.dark,  AppColors.primary);
 
-  static ThemeData _buildTheme(Brightness brightness) {
+  // ── Dynamic factories — accept a custom primary color ─────────────────────
+  static ThemeData lightWith(Color primary) => _build(Brightness.light, primary);
+  static ThemeData darkWith(Color primary)  => _build(Brightness.dark,  primary);
+
+  // ── Core builder ──────────────────────────────────────────────────────────
+  static ThemeData _build(Brightness brightness, Color primary) {
     final isDark = brightness == Brightness.dark;
 
-    final colorScheme = isDark
-        ? const ColorScheme.dark(
-            primary: AppColors.primary,
-            secondary: AppColors.accent,
-            surface: AppColors.surfaceDark,
-            error: AppColors.error,
-            onPrimary: AppColors.white,
-            onSecondary: AppColors.white,
-            onSurface: AppColors.textPrimaryDark,
-            onError: AppColors.white,
-          )
-        : const ColorScheme.light(
-            primary: AppColors.primary,
-            secondary: AppColors.accent,
-            surface: AppColors.surfaceLight,
-            error: AppColors.error,
-            onPrimary: AppColors.white,
-            onSecondary: AppColors.white,
-            onSurface: AppColors.textPrimaryLight,
-            onError: AppColors.white,
-          );
+    // Derive accent as a lighter/darker variant of primary
+    final Color accent = Color.lerp(primary, Colors.blue, 0.25) ?? primary;
+
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: primary,
+      brightness: brightness,
+    ).copyWith(
+      primary:   primary,
+      secondary: accent,
+      surface:   isDark ? AppColors.surfaceDark  : AppColors.surfaceLight,
+      onPrimary: Colors.white,
+      onSurface: isDark ? AppColors.textPrimaryDark  : AppColors.textPrimaryLight,
+      onSurfaceVariant: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+      error:     AppColors.error,
+      onError:   Colors.white,
+    );
 
     return ThemeData(
       useMaterial3: true,
-      brightness: brightness,
-      colorScheme: colorScheme,
+      brightness:   brightness,
+      colorScheme:  colorScheme,
       scaffoldBackgroundColor:
           isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       fontFamily: GoogleFonts.inter().fontFamily,
@@ -52,14 +53,12 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 1,
         shadowColor: isDark ? AppColors.borderDark : AppColors.borderLight,
-        systemOverlayStyle: isDark
-            ? SystemUiOverlayStyle.light
-            : SystemUiOverlayStyle.dark,
+        systemOverlayStyle:
+            isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
         titleTextStyle: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color:
-              isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
         ),
         iconTheme: IconThemeData(
           color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
@@ -81,43 +80,47 @@ class AppTheme {
         margin: EdgeInsets.zero,
       ),
 
-      // ── Elevated button ────────────────────────────────────────────────────
+      // ── Buttons ────────────────────────────────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.white,
-          disabledBackgroundColor: (isDark ? AppColors.borderDark : AppColors.borderLight),
-          minimumSize: const Size(double.infinity, AppDimensions.buttonHeightLg),
+          backgroundColor: primary,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor:
+              isDark ? AppColors.borderDark : AppColors.borderLight,
+          minimumSize:
+              const Size(double.infinity, AppDimensions.buttonHeightLg),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
           ),
           elevation: 0,
-          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle:
+              GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
 
-      // ── Outlined button ────────────────────────────────────────────────────
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary, width: 1.5),
-          minimumSize: const Size(double.infinity, AppDimensions.buttonHeightLg),
+          foregroundColor: primary,
+          side: BorderSide(color: primary, width: 1.5),
+          minimumSize:
+              const Size(double.infinity, AppDimensions.buttonHeightLg),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
           ),
-          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle:
+              GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
 
-      // ── Text button ────────────────────────────────────────────────────────
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+          foregroundColor: primary,
+          textStyle:
+              GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
 
-      // ── Input decoration ───────────────────────────────────────────────────
+      // ── Input ──────────────────────────────────────────────────────────────
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: isDark ? AppColors.surfaceDark : AppColors.white,
@@ -139,7 +142,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: BorderSide(color: primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
@@ -151,11 +154,15 @@ class AppTheme {
         ),
         hintStyle: GoogleFonts.inter(
           fontSize: 14,
-          color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+          color: isDark
+              ? AppColors.textTertiaryDark
+              : AppColors.textTertiaryLight,
         ),
         labelStyle: GoogleFonts.inter(
           fontSize: 14,
-          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+          color: isDark
+              ? AppColors.textSecondaryDark
+              : AppColors.textSecondaryLight,
         ),
         errorStyle: GoogleFonts.inter(fontSize: 12, color: AppColors.error),
       ),
@@ -167,10 +174,10 @@ class AppTheme {
         space: 1,
       ),
 
-      // ── Bottom navigation ──────────────────────────────────────────────────
+      // ── Bottom nav ─────────────────────────────────────────────────────────
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        selectedItemColor: AppColors.primary,
+        selectedItemColor: primary,
         unselectedItemColor:
             isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
         showSelectedLabels: true,
@@ -183,45 +190,58 @@ class AppTheme {
             GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w400),
       ),
 
-      // ── Chip ───────────────────────────────────────────────────────────────
-      chipTheme: ChipThemeData(
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
-        labelStyle:
-            GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-        ),
-        side: BorderSide.none,
-      ),
-
       // ── Tab bar ────────────────────────────────────────────────────────────
       tabBarTheme: TabBarThemeData(
-        labelColor: AppColors.primary,
+        labelColor: primary,
         unselectedLabelColor:
             isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
         labelStyle:
             GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
         unselectedLabelStyle:
             GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w400),
-        indicator: const UnderlineTabIndicator(
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
+        indicator: UnderlineTabIndicator(
+          borderSide: BorderSide(color: primary, width: 2),
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
       ),
 
-      // ── Progress indicator ────────────────────────────────────────────────
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.primary,
-        linearTrackColor: AppColors.accentLight,
+      // ── Progress indicator ─────────────────────────────────────────────────
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: primary,
+        linearTrackColor: primary.withValues(alpha: 0.15),
       ),
 
-      // ── Floating action button ─────────────────────────────────────────────
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.white,
+      // ── FAB ────────────────────────────────────────────────────────────────
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primary,
+        foregroundColor: Colors.white,
         elevation: 4,
+      ),
+
+      // ── Switch ─────────────────────────────────────────────────────────────
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return isDark ? AppColors.textSecondaryDark : AppColors.borderLight;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return primary;
+          return isDark ? AppColors.borderDark : AppColors.dividerLight;
+        }),
+      ),
+
+      // ── Chip ───────────────────────────────────────────────────────────────
+      chipTheme: ChipThemeData(
+        backgroundColor:
+            isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
+        selectedColor: primary.withValues(alpha: 0.15),
+        labelStyle:
+            GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+        ),
+        side: BorderSide.none,
       ),
 
       // ── List tile ─────────────────────────────────────────────────────────
@@ -257,8 +277,7 @@ class AppTheme {
         titleTextStyle: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color:
-              isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
         ),
         contentTextStyle: GoogleFonts.inter(
           fontSize: 14,
@@ -266,18 +285,6 @@ class AppTheme {
               ? AppColors.textSecondaryDark
               : AppColors.textSecondaryLight,
         ),
-      ),
-
-      // ── Switch ─────────────────────────────────────────────────────────────
-      switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.white;
-          return isDark ? AppColors.textSecondaryDark : AppColors.borderLight;
-        }),
-        trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.primary;
-          return isDark ? AppColors.borderDark : AppColors.dividerLight;
-        }),
       ),
 
       // ── Text ───────────────────────────────────────────────────────────────

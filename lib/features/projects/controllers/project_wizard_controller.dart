@@ -1,45 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
-import '../data/models/project_model.dart';
-import '../data/models/project_scope_model.dart';
-import '../data/models/stage_model.dart';
-import '../engine/timeline_engine.dart';
-import '../engine/budget_engine.dart';
-import '../../../core/services/geography_service.dart';
-import '../../../core/services/price_master_service.dart';
+import '../config/wizard_step_config.dart';
 import '../../../core/utils/unit_converter.dart';
 import '../../../core/utils/currency_formatter.dart';
-import '../../../presentation/routes/app_routes.dart';
 
 const _uuid = Uuid();
 
-/// 8-step project creation wizard.
-/// Step index → step name:
-///   0: Project Type
-///   1: Quick Details (name, floors, quality)
-///   2: Location (country → city → area)
-///   3: Plot & Area (size, unit, dimensions)
-///   4: Budget (with live estimation + validation)
-///   5: Timeline Preview (start date → auto-generate)
-///   6: Team (contractor type, supervisor — optional)
-///   7: Review & Create
+/// 6-step project creation wizard controller.
+///
+/// Step 0: Project Type
+/// Step 1: Dynamic Details (per type)
+/// Step 2: Location + Plot & Area
+/// Step 3: Budget + Timeline
+/// Step 4: Team
+/// Step 5: Review + Interactive Timeline
 class ProjectWizardController extends GetxController {
-  static const int totalSteps = 8;
-
-  @override
-  void onInit() {
-    super.onInit();
-    // Recalculate hint whenever unit changes (even before text changes)
-    ever(plotUnit, (_) => _updatePlotHint());
-  }
+  static const int totalSteps = 6;
 
   // ── Step navigation ───────────────────────────────────────────────────────
-  final currentStep = 0.obs;
+  final currentStep   = 0.obs;
+  final isAnimating   = false.obs;
 
   bool get isFirstStep => currentStep.value == 0;
   bool get isLastStep  => currentStep.value == totalSteps - 1;
-  bool get isReviewStep => currentStep.value == totalSteps - 1;
 
   void nextStep() {
     if (currentStep.value < totalSteps - 1) currentStep.value++;
@@ -54,86 +38,104 @@ class ProjectWizardController extends GetxController {
   }
 
   // ── Step 0: Project Type ──────────────────────────────────────────────────
-  final selectedProjectType = 'house'.obs;
+  final selectedTypeKey = 'house'.obs;
 
-  static const List<Map<String, String>> projectTypes = [
-    {'key': 'house',          'label': 'New House',       'icon': '🏠'},
-    {'key': 'villa',          'label': 'Villa',           'icon': '🏛️'},
-    {'key': 'apartment',      'label': 'Apartment',       'icon': '🏢'},
-    {'key': 'commercial',     'label': 'Commercial',      'icon': '🏗️'},
-    {'key': 'shop',           'label': 'Shop',            'icon': '🏪'},
-    {'key': 'office',         'label': 'Office',          'icon': '🖥️'},
-    {'key': 'renovation',     'label': 'Renovation',      'icon': '🔧'},
-    {'key': 'grey_structure', 'label': 'Grey Structure',  'icon': '🏗️'},
-    {'key': 'interior',       'label': 'Interior',        'icon': '🛋️'},
-    {'key': 'boundary_wall',  'label': 'Boundary Wall',   'icon': '🧱'},
-    {'key': 'kitchen',        'label': 'Kitchen',         'icon': '🍳'},
-    {'key': 'bathroom',       'label': 'Bathroom',        'icon': '🚿'},
-    {'key': 'extension',      'label': 'Extension',       'icon': '➕'},
-    {'key': 'landscaping',    'label': 'Landscaping',     'icon': '🌿'},
-    {'key': 'custom',         'label': 'Custom',          'icon': '⚙️'},
-  ];
+  ProjectTypeConfig get selectedConfig =>
+      configForType(selectedTypeKey.value) ?? kProjectTypeConfigs.first;
 
-  void selectProjectType(String type) => selectedProjectType.value = type;
+  void selectType(String key) {
+    selectedTypeKey.value = key;
+    _resetStep2Fields();
+    stages.value = _generateStages();
+  }
 
-  // ── Step 1: Quick Details ─────────────────────────────────────────────────
-  final projectNameCtrl = TextEditingController();
-  final floors          = 1.obs;
-  final qualityTier     = 'standard'.obs;
+  String get projectTypeLabel => selectedConfig.label;
 
-  static const List<String> qualityTiers = ['economy', 'standard', 'premium', 'luxury'];
+  // ── Step 1: Dynamic fields ────────────────────────────────────────────────
+  // Stores current values keyed by field.key
+  final fieldValues = <String, dynamic>{}.obs;
 
-  String get projectName => projectNameCtrl.text.trim();
-  bool get step1Valid    => projectName.isNotEmpty;
+  void _resetStep2Fields() {
+    fieldValues.clear();
+    for (final field in selectedConfig.step2Fields) {
+      if (field.defaultValue != null) {
+        fieldValues[field.key] = field.defaultValue;
+      }
+    }
+    // Initialize quality
+    fieldValues['quality'] ??= 'Standard';
+  }
+
+  void setFieldValue(String key, dynamic value) {
+    fieldValues[key] = value;
+    fieldValues.refresh();
+    if (key == 'floors' || key == 'quality') {
+      stages.value = _generateStages();
+    }
+  }
+
+  T? getFieldValue<T>(String key) => fieldValues[key] as T?;
+
+  // Chip multi-select helper
+  void toggleChipValue(String fieldKey, String option) {
+    final current = List<String>.from(fieldValues[fieldKey] as List<String>? ?? []);
+    if (current.contains(option)) {
+      current.remove(option);
+    } else {
+      current.add(option);
+    }
+    fieldValues[fieldKey] = current;
+    fieldValues.refresh();
+  }
+
+  bool isChipSelected(String fieldKey, String option) {
+    final current = fieldValues[fieldKey];
+    if (current is List) return current.contains(option);
+    if (current is String) return current == option;
+    return false;
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    _resetStep2Fields();
+    ever(plotUnit,             (_) { _updatePlotHint(); _updatePlotSqm(); });
+    ever(constructionAreaUnit, (_) => _updateConstructionSqm());
+    stages.value = _generateStages();
+  }
 
   // ── Step 2: Location ──────────────────────────────────────────────────────
-  final selectedCountryId = GeographyService.defaultCountryId.obs;
-  final selectedCityId    = GeographyService.defaultCityId.obs;
-  final selectedAreaId    = Rxn<int>();
+  final selectedCountryCode = 'PK'.obs;
+  final selectedCity        = 'Lahore'.obs;
+  final customCity          = ''.obs;
+  final neighbourhood       = ''.obs;
 
-  List<CountryData> get countries {
-    try { return Get.find<GeographyService>().countries; }
-    catch (_) { return []; }
+  CountryInfo get selectedCountry {
+    try { return kAllCountries.firstWhere((c) => c.code == selectedCountryCode.value); }
+    catch (_) { return kAllCountries.first; }
   }
 
-  List<CityData> get cities {
-    try { return Get.find<GeographyService>().citiesForCountry(selectedCountryId.value); }
-    catch (_) { return []; }
+  List<String> get citiesForCountry => selectedCountry.cities;
+
+  String get currencyCode => selectedCountry.currency;
+
+  void selectCountry(String code) {
+    selectedCountryCode.value = code;
+    final cities = kAllCountries.firstWhere(
+        (c) => c.code == code, orElse: () => kAllCountries.first).cities;
+    selectedCity.value = cities.isNotEmpty ? cities.first : '';
+    customCity.value   = '';
   }
 
-  List<AreaData> get areas {
-    try { return Get.find<GeographyService>().areasForCity(selectedCityId.value); }
-    catch (_) { return []; }
+  void selectCity(String city) {
+    selectedCity.value = city;
+    customCity.value   = '';
   }
 
-  void selectCountry(int id) {
-    selectedCountryId.value = id;
-    selectedCityId.value    = cities.isNotEmpty ? cities.first.id : 0;
-    selectedAreaId.value    = null;
-  }
+  String get effectiveCity =>
+      customCity.value.isNotEmpty ? customCity.value : selectedCity.value;
 
-  void selectCity(int id) {
-    selectedCityId.value = id;
-    selectedAreaId.value = null;
-  }
-
-  String get selectedCityName {
-    try { return cities.firstWhere((c) => c.id == selectedCityId.value).name; }
-    catch (_) { return ''; }
-  }
-
-  String get selectedAreaName {
-    if (selectedAreaId.value == null) return '';
-    try { return areas.firstWhere((a) => a.id == selectedAreaId.value).name; }
-    catch (_) { return ''; }
-  }
-
-  String get selectedCountryCurrency {
-    try { return countries.firstWhere((c) => c.id == selectedCountryId.value).currencyCode; }
-    catch (_) { return 'PKR'; }
-  }
-
-  // ── Step 3: Plot & Area ───────────────────────────────────────────────────
+  // ── Step 2: Plot & Area ───────────────────────────────────────────────────
   final plotSizeCtrl          = TextEditingController();
   final plotUnit              = 'marla'.obs;
   final constructionAreaCtrl  = TextEditingController();
@@ -141,276 +143,196 @@ class ProjectWizardController extends GetxController {
   final plotWidthCtrl         = TextEditingController();
   final plotDepthCtrl         = TextEditingController();
 
-  // Reactive hint — always has a value so Obx always subscribes
-  final plotHintText = ''.obs;
+  final plotHintText          = ''.obs;
+  // Reactive sqm values — always subscribed so Obx never crashes on first render
+  final plotSizeSqmObs        = Rxn<double>();
+  final constructionAreaSqmObs = Rxn<double>();
 
-  double? get plotSizeSqm {
-    final val = double.tryParse(plotSizeCtrl.text.trim());
-    if (val == null) return null;
-    return UnitConverter.toSqMeters(val, plotUnit.value);
+  bool get showPlotArea => selectedConfig.showPlotArea;
+
+  double? get plotSizeSqm => plotSizeSqmObs.value;
+
+  double? get constructionAreaSqm => constructionAreaSqmObs.value;
+
+  double? get plotWidthM {
+    final val = double.tryParse(plotWidthCtrl.text.trim());
+    return val != null ? val * 0.3048 : null; // ft to m
   }
 
-  double? get constructionAreaSqm {
+  double? get plotDepthM {
+    final val = double.tryParse(plotDepthCtrl.text.trim());
+    return val != null ? val * 0.3048 : null; // ft to m
+  }
+
+  void _updatePlotSqm() {
+    final val = double.tryParse(plotSizeCtrl.text.trim());
+    plotSizeSqmObs.value = val != null && val > 0
+        ? UnitConverter.toSqMeters(val, plotUnit.value)
+        : null;
+  }
+
+  void _updateConstructionSqm() {
     final val = double.tryParse(constructionAreaCtrl.text.trim());
-    if (val == null) return null;
-    return UnitConverter.toSqMeters(val, constructionAreaUnit.value);
+    constructionAreaSqmObs.value = val != null && val > 0
+        ? UnitConverter.toSqMeters(val, constructionAreaUnit.value)
+        : null;
+  }
+
+  void onPlotSizeChanged(String value) {
+    _updatePlotHint();
+    _updatePlotSqm();
+    if (constructionAreaCtrl.text.trim().isEmpty) {
+      final v = double.tryParse(value);
+      if (v != null) {
+        constructionAreaCtrl.text = (v * 0.9).toStringAsFixed(2);
+        _updateConstructionSqm();
+      }
+    }
+    _updateBudgetEstimate();
+    stages.value = _generateStages();
   }
 
   void _updatePlotHint() {
     final val = double.tryParse(plotSizeCtrl.text.trim());
-    if (val == null || val <= 0) {
-      plotHintText.value = '';
-      return;
-    }
+    if (val == null || val <= 0) { plotHintText.value = ''; return; }
     final unit = plotUnit.value;
     plotHintText.value = UnitConverter.hint(
-      val, unit,
-      unit == 'marla' ? ['sqft', 'sqm'] : ['marla', 'sqft'],
-    );
+        val, unit, unit == 'marla' ? ['sqft', 'sqm'] : ['marla', 'sqft']);
   }
 
-  /// Auto-fill construction area as 90% of plot size when plot is entered
-  void onPlotSizeChanged(String value) {
-    _updatePlotHint();
-    if (constructionAreaCtrl.text.trim().isEmpty) {
-      final plotVal = double.tryParse(value);
-      if (plotVal != null) {
-        final suggested = plotVal * 0.9;
-        constructionAreaCtrl.text = suggested.toStringAsFixed(2);
-      }
+  // ── Step 3: Budget ────────────────────────────────────────────────────────
+  final budgetCtrl      = TextEditingController();
+  final estimatedCostLow  = 0.0.obs;
+  final estimatedCostHigh = 0.0.obs;
+
+  double get budget =>
+      double.tryParse(budgetCtrl.text.trim().replaceAll(',', '')) ?? 0;
+
+  void onBudgetChanged(String _) => _updateBudgetEstimate();
+
+  void _updateBudgetEstimate() {
+    final areaSqm = constructionAreaSqm ?? plotSizeSqm;
+    if (areaSqm == null || areaSqm <= 0) {
+      estimatedCostLow.value  = 0;
+      estimatedCostHigh.value = 0;
+      return;
     }
-    _runEstimation();
+    final quality = fieldValues['quality'] as String? ?? 'Standard';
+    final floors  = fieldValues['floors'] as int? ?? 1;
+    final sqft    = UnitConverter.fromSqMeters(areaSqm, 'sqft') * floors;
+
+    final rates = {
+      'Economy':  const [1400.0, 1800.0],
+      'Standard': const [2000.0, 2600.0],
+      'Premium':  const [3000.0, 4000.0],
+      'Luxury':   const [5000.0, 7000.0],
+    };
+    final rate = rates[quality] ?? rates['Standard']!;
+    estimatedCostLow.value  = sqft * rate[0];
+    estimatedCostHigh.value = sqft * rate[1];
   }
 
-  // ── Step 4: Budget ────────────────────────────────────────────────────────
-  final budgetCtrl           = TextEditingController();
-  final estimatedCost        = 0.0.obs;
-  final budgetValidation     = Rxn<BudgetValidationResult>();
-  final isEstimating         = false.obs;
-
-  String get currencyCode => selectedCountryCurrency;
-
-  void onBudgetChanged(String _) => _validateBudget();
-
-  void _validateBudget() {
-    final budget = double.tryParse(
-        budgetCtrl.text.trim().replaceAll(',', '')) ?? 0;
-    if (estimatedCost.value > 0 && budget > 0) {
-      budgetValidation.value = BudgetEngine.validate(
-        userBudget: budget,
-        estimatedCost: estimatedCost.value,
-        qualityTier: qualityTier.value,
-      );
-    } else {
-      budgetValidation.value = null;
-    }
+  String get formattedEstimateRange {
+    if (estimatedCostLow.value <= 0) return '';
+    return '${CurrencyFormatter.formatCompact(estimatedCostLow.value, currency: currencyCode)} '
+        '– ${CurrencyFormatter.formatCompact(estimatedCostHigh.value, currency: currencyCode)}';
   }
 
-  Future<void> _runEstimation() async {
-    final areaSqm = constructionAreaSqm;
-    if (areaSqm == null || areaSqm <= 0) return;
+  // ── Step 3: Timeline ──────────────────────────────────────────────────────
+  final startDate         = DateTime.now().obs;
+  final stages            = <WizardStage>[].obs;
+  final isGenerating      = false.obs;
+  final editModeActive    = false.obs;  // for Step 6 interactive timeline
 
-    isEstimating.value = true;
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    final estimate = BudgetEngine.estimateHouse(
-      constructionAreaSqm: areaSqm,
-      floors: floors.value,
-      qualityTier: qualityTier.value,
-      currencyCode: currencyCode,
-    );
-    estimatedCost.value = estimate.total;
-    _validateBudget();
-    isEstimating.value = false;
-  }
-
-  // ── Step 5: Timeline ──────────────────────────────────────────────────────
-  final startDate        = DateTime.now().obs;
-  final generatedStages  = <StageModel>[].obs;
-  final isGenerating     = false.obs;
-
-  DateTime get projectedEndDate {
-    if (generatedStages.isEmpty) return startDate.value.add(const Duration(days: 365));
-    return generatedStages.last.plannedEnd ?? startDate.value.add(const Duration(days: 365));
+  List<WizardStage> _generateStages() {
+    final templates = selectedConfig.stages;
+    final quality   = fieldValues['quality'] as String? ?? 'Standard';
+    final areaSqm   = constructionAreaSqm ?? plotSizeSqm ?? 126.0;
+    final raw       = templates.asMap().entries.map((e) => WizardStage(
+      id: _uuid.v4(),
+      name: e.value.name,
+      durationDays: scaleDuration(e.value.baseDurationDays, areaSqm, quality),
+      costPct: e.value.costPct,
+      color: e.value.color,
+      order: e.key,
+    )).toList();
+    return computeStageDates(raw, startDate.value);
   }
 
   Future<void> generateTimeline() async {
     isGenerating.value = true;
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    final scope = _buildScopeForPreview();
-    try {
-      final stages = TimelineEngine.generateForScope(
-        scope: scope,
-        projectStart: startDate.value,
-      );
-      generatedStages.value = stages;
-    } catch (_) {
-      generatedStages.value = [];
-    }
+    await Future.delayed(const Duration(milliseconds: 600));
+    stages.value = _generateStages();
     isGenerating.value = false;
   }
 
-  ProjectScopeModel _buildScopeForPreview() => ProjectScopeModel(
-        id: 'preview',
-        projectId: 'preview',
-        name: projectName.isNotEmpty ? projectName : 'My Project',
-        projectType: selectedProjectType.value,
-        qualityTier: qualityTier.value,
-        constructionAreaSqm: constructionAreaSqm ?? 126.0,
-        floors: floors.value,
-        budgetAmount: double.tryParse(budgetCtrl.text.trim().replaceAll(',', '')) ?? 0,
-        currencyCode: currencyCode,
-        startDate: startDate.value,
-      );
+  // Drag-and-drop reorder
+  void reorderStages(int oldIndex, int newIndex) {
+    final list = List<WizardStage>.from(stages);
+    final item = list.removeAt(oldIndex);
+    list.insert(newIndex > oldIndex ? newIndex - 1 : newIndex, item);
+    stages.value = computeStageDates(list, startDate.value);
+  }
 
-  // ── Step 6: Team ──────────────────────────────────────────────────────────
+  void deleteStage(String id) {
+    final list = stages.where((s) => s.id != id).toList();
+    stages.value = computeStageDates(list, startDate.value);
+  }
+
+  void toggleEditMode() => editModeActive.value = !editModeActive.value;
+
+  // ── Step 4: Team ──────────────────────────────────────────────────────────
   final contractorType        = 'self'.obs;
+  final companyCodeCtrl       = TextEditingController();
   final supervisorPhoneCtrl   = TextEditingController();
+  final companyVerified       = false.obs;
+  final companyRequestSent    = false.obs;
 
-  static const List<Map<String, String>> contractorTypes = [
-    {'key': 'self',    'label': 'Self-Managed',       'desc': 'I will manage everything myself'},
-    {'key': 'local',   'label': 'Local Contractor',   'desc': 'Hire a local mistry or contractor'},
-    {'key': 'company', 'label': 'Construction Co.',   'desc': 'Hire a registered construction company'},
-  ];
+  List<TeamOption> get teamOptions => selectedConfig.teamOptions;
 
-  // ── Create Project ────────────────────────────────────────────────────────
+  Future<void> verifyCompanyCode() async {
+    if (companyCodeCtrl.text.trim().isEmpty) return;
+    await Future.delayed(const Duration(seconds: 1));
+    companyRequestSent.value = true;
+  }
+
+  // ── Step 5: Create project ────────────────────────────────────────────────
   final isCreating = false.obs;
 
   Future<void> createProject() async {
     isCreating.value = true;
-
-    final budget = double.tryParse(
-        budgetCtrl.text.trim().replaceAll(',', '')) ?? 0;
-
-    final scopeId   = _uuid.v4();
-    final projectId = _uuid.v4();
-
-    final stages = generatedStages.map((s) => s.copyWith(
-      // Assign real IDs — server would do this in production
-    )).toList();
-
-    final scope = ProjectScopeModel(
-      id: scopeId,
-      projectId: projectId,
-      name: _scopeNameForType(selectedProjectType.value),
-      projectType: selectedProjectType.value,
-      qualityTier: qualityTier.value,
-      plotSizeSqm: plotSizeSqm,
-      constructionAreaSqm: constructionAreaSqm,
-      plotWidthM: double.tryParse(plotWidthCtrl.text.trim()),
-      plotDepthM: double.tryParse(plotDepthCtrl.text.trim()),
-      floors: floors.value,
-      budgetAmount: budget,
-      estimatedCost: estimatedCost.value,
-      currencyCode: currencyCode,
-      startDate: startDate.value,
-      targetEndDate: projectedEndDate,
-      stages: stages,
-    );
-
-    final cityGeo = cities.where((c) => c.id == selectedCityId.value);
-    final areaGeo = areas.where((a) => a.id == (selectedAreaId.value ?? 0));
-
-    final project = ProjectModel(
-      id: projectId,
-      ownerId: 'current_user',
-      name: projectName.isNotEmpty
-          ? projectName
-          : '${selectedCityName.isNotEmpty ? selectedCityName : 'My'} Project',
-      status: 'active',
-      priority: 'medium',
-      countryId: selectedCountryId.value,
-      cityId: selectedCityId.value,
-      areaId: selectedAreaId.value,
-      cityName: cityGeo.isNotEmpty ? cityGeo.first.name : null,
-      areaName: areaGeo.isNotEmpty ? areaGeo.first.name : null,
-      budgetAmount: budget,
-      estimatedCost: estimatedCost.value,
-      actualCost: 0,
-      currencyCode: currencyCode,
-      startDate: startDate.value,
-      targetEndDate: projectedEndDate,
-      contractorType: contractorType.value,
-      scopes: [scope],
-      completionPct: 0,
-      healthScore: 100,
-      lastUpdated: DateTime.now(),
-    );
-
-    // TODO: Call API to persist. For now, add to mock list via ProjectsController.
     await Future.delayed(const Duration(seconds: 1));
-
     isCreating.value = false;
-
-    Get.offAllNamed(
-      AppRoutes.projectStageTracker,
-      arguments: project,
+    Get.back();
+    Get.snackbar(
+      'Project Created',
+      '${fieldValues['name'] ?? selectedConfig.label} has been created successfully',
+      duration: const Duration(seconds: 3),
     );
   }
 
-  // ── Validation per step ───────────────────────────────────────────────────
-
+  // ── Validation ────────────────────────────────────────────────────────────
   bool isStepValid(int step) => switch (step) {
-        0 => selectedProjectType.value.isNotEmpty,
-        1 => projectName.isNotEmpty,
-        2 => selectedCityId.value > 0,
-        3 => plotSizeSqm != null,
-        4 => true, // budget is optional — user can override
+        0 => selectedTypeKey.value.isNotEmpty,
+        1 => true,
+        2 => selectedCountryCode.value.isNotEmpty,
+        3 => true,
+        4 => true,
         5 => true,
-        6 => true,
-        7 => true,
         _ => false,
       };
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  bool get canContinue => isStepValid(currentStep.value);
 
-  static String _scopeNameForType(String type) => switch (type) {
-        'house'          => 'Main House',
-        'villa'          => 'Villa',
-        'apartment'      => 'Apartment',
-        'commercial'     => 'Commercial Building',
-        'shop'           => 'Shop',
-        'office'         => 'Office',
-        'renovation'     => 'Renovation',
-        'grey_structure' => 'Grey Structure',
-        'interior'       => 'Interior Work',
-        'boundary_wall'  => 'Boundary Wall',
-        'kitchen'        => 'Kitchen Renovation',
-        'bathroom'       => 'Bathroom Renovation',
-        'extension'      => 'Extension',
-        'landscaping'    => 'Landscaping',
-        _                => 'Main Scope',
-      };
-
-  String get qualityLabel => qualityTier.value[0].toUpperCase() +
-      qualityTier.value.substring(1);
-
-  String get projectTypeLabel {
-    try {
-      return projectTypes
-          .firstWhere((t) => t['key'] == selectedProjectType.value)['label']!;
-    } catch (_) {
-      return selectedProjectType.value;
-    }
-  }
-
-  String get formattedEstimatedCost =>
-      CurrencyFormatter.formatCompact(estimatedCost.value, currency: currencyCode);
-
-  String get formattedBudget {
-    final val = double.tryParse(budgetCtrl.text.trim().replaceAll(',', '')) ?? 0;
-    return CurrencyFormatter.formatCompact(val, currency: currencyCode);
-  }
-
+  // ── Cleanup ───────────────────────────────────────────────────────────────
   @override
   void onClose() {
-    projectNameCtrl.dispose();
     plotSizeCtrl.dispose();
     constructionAreaCtrl.dispose();
     plotWidthCtrl.dispose();
     plotDepthCtrl.dispose();
     budgetCtrl.dispose();
+    companyCodeCtrl.dispose();
     supervisorPhoneCtrl.dispose();
     super.onClose();
   }

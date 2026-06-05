@@ -5,7 +5,6 @@ import '../controllers/attendance_controller.dart';
 import '../data/models/attendance_model.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../presentation/theme/app_colors.dart';
-import '../../../presentation/theme/app_dimensions.dart';
 import '../../../presentation/theme/app_text_styles.dart';
 import '../../../presentation/widgets/common/app_button.dart';
 import '../../../presentation/routes/app_routes.dart';
@@ -16,7 +15,7 @@ class LaborAttendanceScreen extends GetView<AttendanceController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Attendance'),
         actions: [
@@ -32,23 +31,21 @@ class LaborAttendanceScreen extends GetView<AttendanceController> {
         }
         return Column(
           children: [
-            // ── Week navigator ──────────────────────────────────────────────
             _WeekHeader(controller: controller),
-            // ── Summary row ─────────────────────────────────────────────────
             _SummaryRow(controller: controller),
             const Divider(height: 1),
-            // ── Grid header: day labels ──────────────────────────────────────
             _GridDayHeader(controller: controller),
             const Divider(height: 1),
-            // ── Worker rows ──────────────────────────────────────────────────
             Expanded(
               child: controller.laborList.isEmpty
-                  ? _EmptyLabor()
+                  ? const _EmptyLabor()
                   : ListView.separated(
                       padding: const EdgeInsets.only(bottom: 100),
                       itemCount: controller.laborList.length,
-                      separatorBuilder: (_, __) =>
-                          const Divider(height: 1, color: Color(0xFFF0F2F5)),
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        color: Theme.of(context).dividerColor,
+                      ),
                       itemBuilder: (_, i) => _WorkerGridRow(
                         controller: controller,
                         laborIndex: i,
@@ -71,21 +68,25 @@ class _WeekHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+    final divider = Theme.of(context).dividerColor;
+    final bg      = Theme.of(context).scaffoldBackgroundColor;
+
     return Obx(() {
-      final start = controller.selectedWeekStart.value;
-      final end   = controller.weekEnd;
-      final months = ['Jan','Feb','Mar','Apr','May','Jun',
-                      'Jul','Aug','Sep','Oct','Nov','Dec'];
-      String label;
-      if (start.month == end.month) {
-        label = '${start.day}–${end.day} ${months[start.month - 1]} ${start.year}';
-      } else {
-        label = '${start.day} ${months[start.month - 1]} – ${end.day} ${months[end.month - 1]}';
-      }
+      final start  = controller.selectedWeekStart.value;
+      final end    = controller.weekEnd;
+      const months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      ];
+      final label = start.month == end.month
+          ? '${start.day}–${end.day} ${months[start.month - 1]} ${start.year}'
+          : '${start.day} ${months[start.month - 1]} – ${end.day} ${months[end.month - 1]}';
 
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        color: const Color(0xFFF8F9FC),
+        color: bg,
         child: Row(
           children: [
             GestureDetector(
@@ -93,18 +94,19 @@ class _WeekHeader extends StatelessWidget {
               child: Container(
                 width: 32, height: 32,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  border: Border.all(color: divider),
                 ),
-                child: const Icon(Icons.chevron_left_rounded, size: 20),
+                child: Icon(Icons.chevron_left_rounded,
+                    size: 20, color: cs.onSurface),
               ),
             ),
             Expanded(
               child: Text(
                 label,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.h4S.copyWith(color: AppColors.textPrimaryLight),
+                style: AppTextStyles.h4S.copyWith(color: cs.onSurface),
               ),
             ),
             GestureDetector(
@@ -112,14 +114,17 @@ class _WeekHeader extends StatelessWidget {
               child: Container(
                 width: 32, height: 32,
                 decoration: BoxDecoration(
-                  color: controller.canGoNext ? Colors.white : const Color(0xFFF0F2F5),
+                  color: controller.canGoNext ? surface : divider,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  border: Border.all(color: divider),
                 ),
-                child: Icon(Icons.chevron_right_rounded, size: 20,
-                    color: controller.canGoNext
-                        ? AppColors.textPrimaryLight
-                        : AppColors.textTertiaryLight),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: controller.canGoNext
+                      ? cs.onSurface
+                      : cs.onSurfaceVariant,
+                ),
               ),
             ),
           ],
@@ -137,29 +142,32 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Obx(() => Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          color: Colors.white,
+          color: cs.surface,
           child: Row(
             children: [
               _SummaryChip(
                   label: 'Workers',
                   value: '${controller.totalWorkers}',
-                  color: AppColors.primary),
+                  color: cs.primary,
+                  muted: cs.onSurfaceVariant),
               const SizedBox(width: 12),
               _SummaryChip(
                   label: 'Present today',
                   value: '${controller.presentToday}',
-                  color: AppColors.success),
+                  color: AppColors.success,
+                  muted: cs.onSurfaceVariant),
               const Spacer(),
               Text(
                 controller.formattedWeeklyTotal,
-                style: AppTextStyles.h3S.copyWith(color: AppColors.primary),
+                style: AppTextStyles.h3S.copyWith(color: cs.primary),
               ),
               const SizedBox(width: 4),
               Text('week',
                   style: AppTextStyles.labelSmallS
-                      .copyWith(color: AppColors.textSecondaryLight)),
+                      .copyWith(color: cs.onSurfaceVariant)),
             ],
           ),
         ));
@@ -170,8 +178,13 @@ class _SummaryChip extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  const _SummaryChip(
-      {required this.label, required this.value, required this.color});
+  final Color muted;
+  const _SummaryChip({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.muted,
+  });
 
   @override
   Widget build(BuildContext context) => Row(
@@ -181,8 +194,7 @@ class _SummaryChip extends StatelessWidget {
               decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
           const SizedBox(width: 5),
           Text('$value $label',
-              style: AppTextStyles.labelSmallS
-                  .copyWith(color: AppColors.textSecondaryLight)),
+              style: AppTextStyles.labelSmallS.copyWith(color: muted)),
         ],
       );
 }
@@ -195,40 +207,42 @@ class _GridDayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
-      color: const Color(0xFFF8F9FC),
+      color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          const SizedBox(width: 120), // worker name column
+          const SizedBox(width: 120),
           ...AttendanceController.dayHeaders
               .map((d) => Expanded(
                     child: Text(d,
                         textAlign: TextAlign.center,
                         style: AppTextStyles.labelSmallS
-                            .copyWith(color: AppColors.textSecondaryLight)),
+                            .copyWith(color: cs.onSurfaceVariant)),
                   ))
               .toList(),
-          const SizedBox(width: 60), // wage column
+          const SizedBox(width: 60),
         ],
       ),
     );
   }
 }
 
-// ── Worker row (one row per worker, 6 day cells) ──────────────────────────────
+// ── Worker row ────────────────────────────────────────────────────────────────
 
 class _WorkerGridRow extends StatelessWidget {
   final AttendanceController controller;
   final int laborIndex;
-  const _WorkerGridRow({required this.controller, required this.laborIndex});
+  const _WorkerGridRow(
+      {required this.controller, required this.laborIndex});
 
   @override
   Widget build(BuildContext context) {
+    final cs    = Theme.of(context).colorScheme;
     final labor = controller.laborList[laborIndex];
 
     return Obx(() {
-      // Calculate weekly wage for this worker
       double effectiveDays = 0;
       double otHours = 0;
       for (final day in controller.weekDays) {
@@ -240,11 +254,10 @@ class _WorkerGridRow extends StatelessWidget {
           labor.effectiveOvertimeRate * otHours;
 
       return Container(
-        color: Colors.white,
+        color: cs.surface,
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            // Worker name + role
             SizedBox(
               width: 120,
               child: Padding(
@@ -255,20 +268,20 @@ class _WorkerGridRow extends StatelessWidget {
                   children: [
                     Text(
                       labor.fullName.split(' ').first,
-                      style: AppTextStyles.labelLargeS,
+                      style: AppTextStyles.labelLargeS
+                          .copyWith(color: cs.onSurface),
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       labor.role,
-                      style: AppTextStyles.labelSmallS.copyWith(
-                          color: AppColors.textSecondaryLight),
+                      style: AppTextStyles.labelSmallS
+                          .copyWith(color: cs.onSurfaceVariant),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
             ),
-            // 6 day cells
             ...controller.weekDays.map((day) {
               final rec = controller.getRecord(labor.id, day);
               return Expanded(
@@ -277,20 +290,17 @@ class _WorkerGridRow extends StatelessWidget {
                     HapticFeedback.selectionClick();
                     controller.cycleStatus(labor.id, day);
                   },
-                  child: Center(
-                    child: _StatusCell(status: rec.status),
-                  ),
+                  child: Center(child: _StatusCell(status: rec.status)),
                 ),
               );
             }).toList(),
-            // Weekly wage
             SizedBox(
               width: 60,
               child: Text(
                 CurrencyFormatter.formatNumberCompact(wage),
                 textAlign: TextAlign.center,
                 style: AppTextStyles.labelSmallS.copyWith(
-                    color: AppColors.primary, fontWeight: FontWeight.w700),
+                    color: cs.primary, fontWeight: FontWeight.w700),
               ),
             ),
           ],
@@ -300,7 +310,7 @@ class _WorkerGridRow extends StatelessWidget {
   }
 }
 
-// ── Status cell ───────────────────────────────────────────────────────────────
+// ── Status cell — semantic colors stay fixed regardless of theme ──────────────
 
 class _StatusCell extends StatelessWidget {
   final AttendanceStatus status;
@@ -313,16 +323,15 @@ class _StatusCell extends StatelessWidget {
       AttendanceStatus.absent   => ('A',  const Color(0xFFFEE2E2), AppColors.error),
       AttendanceStatus.halfDay  => ('½',  const Color(0xFFFEF3C7), AppColors.warning),
       AttendanceStatus.overtime => ('OT', const Color(0xFFEDE9FE), const Color(0xFF7C3AED)),
-      AttendanceStatus.leave    => ('L',  const Color(0xFFF3F4F6), AppColors.textSecondaryLight),
+      AttendanceStatus.leave    => ('L',  Theme.of(context).dividerColor,
+                                          Theme.of(context).colorScheme.onSurfaceVariant),
     };
 
     return Container(
       width: 30, height: 30,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
-      ),
+          color: bg, borderRadius: BorderRadius.circular(6)),
       child: Text(label,
           style: TextStyle(
               fontSize: 10, fontWeight: FontWeight.w700, color: fg)),
@@ -333,28 +342,33 @@ class _StatusCell extends StatelessWidget {
 // ── Empty state ───────────────────────────────────────────────────────────────
 
 class _EmptyLabor extends StatelessWidget {
+  const _EmptyLabor();
+
   @override
-  Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.people_outline, size: 48, color: AppColors.textTertiaryLight),
-            const SizedBox(height: 12),
-            Text('No workers added yet',
-                style: AppTextStyles.h4S.copyWith(
-                    color: AppColors.textSecondaryLight)),
-            const SizedBox(height: 6),
-            Text('Go to Workers tab to add site workers',
-                style: AppTextStyles.bodySmallS.copyWith(
-                    color: AppColors.textTertiaryLight)),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () => Get.toNamed(AppRoutes.laborList),
-              child: const Text('Add Workers →'),
-            ),
-          ],
-        ),
-      );
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.people_outline, size: 48, color: cs.onSurfaceVariant),
+          const SizedBox(height: 12),
+          Text('No workers added yet',
+              style:
+                  AppTextStyles.h4S.copyWith(color: cs.onSurfaceVariant)),
+          const SizedBox(height: 6),
+          Text('Go to Workers tab to add site workers',
+              style: AppTextStyles.bodySmallS
+                  .copyWith(color: cs.onSurfaceVariant)),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => Get.toNamed(AppRoutes.laborList),
+            child: const Text('Add Workers →'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Bottom bar ────────────────────────────────────────────────────────────────
@@ -365,12 +379,16 @@ class _BottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+    final divider = Theme.of(context).dividerColor;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
           16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+      decoration: BoxDecoration(
+        color: surface,
+        border: Border(top: BorderSide(color: divider)),
       ),
       child: Obx(() => Row(
             children: [
@@ -380,12 +398,11 @@ class _BottomBar extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text('Weekly Total',
-                        style: AppTextStyles.labelSmallS.copyWith(
-                            color: AppColors.textSecondaryLight)),
+                        style: AppTextStyles.labelSmallS
+                            .copyWith(color: cs.onSurfaceVariant)),
                     Text(
                       controller.formattedWeeklyTotal,
-                      style: AppTextStyles.h3S
-                          .copyWith(color: AppColors.primary),
+                      style: AppTextStyles.h3S.copyWith(color: cs.primary),
                     ),
                   ],
                 ),

@@ -17,7 +17,9 @@ class MyProjectsScreen extends GetView<ProjectsController> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+    final divider = Theme.of(context).dividerColor;
 
     return Scaffold(
       appBar: AppBar(
@@ -42,17 +44,16 @@ class MyProjectsScreen extends GetView<ProjectsController> {
             child: Container(
               height: 44,
               decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : AppColors.white,
+                color: surface,
                 borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                border: Border.all(
-                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                ),
+                border: Border.all(color: divider),
               ),
               child: Row(
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.only(left: 12, right: 8),
-                    child: Icon(Icons.search_rounded, color: AppColors.textTertiaryLight, size: 20),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12, right: 8),
+                    child: Icon(Icons.search_rounded,
+                        color: cs.onSurfaceVariant, size: 20),
                   ),
                   Expanded(
                     child: TextField(
@@ -70,38 +71,35 @@ class MyProjectsScreen extends GetView<ProjectsController> {
             ),
           ),
 
-          // Filter tabs
+          // Filter chips
           const SizedBox(height: AppDimensions.md),
           Obx(
             () => SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.pagePaddingH),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.pagePaddingH),
               child: Row(
                 children: [
                   _FilterChip(
                     label: 'all'.tr,
-                    value: 'all',
                     selected: controller.selectedFilter.value == 'all',
                     onTap: () => controller.selectedFilter.value = 'all',
                   ),
                   const SizedBox(width: AppDimensions.sm),
                   _FilterChip(
                     label: 'active_label'.tr,
-                    value: 'active',
                     selected: controller.selectedFilter.value == 'active',
                     onTap: () => controller.selectedFilter.value = 'active',
                   ),
                   const SizedBox(width: AppDimensions.sm),
                   _FilterChip(
                     label: 'completed_label'.tr,
-                    value: 'completed',
                     selected: controller.selectedFilter.value == 'completed',
                     onTap: () => controller.selectedFilter.value = 'completed',
                   ),
                   const SizedBox(width: AppDimensions.sm),
                   _FilterChip(
                     label: 'on_hold'.tr,
-                    value: 'on_hold',
                     selected: controller.selectedFilter.value == 'on_hold',
                     onTap: () => controller.selectedFilter.value = 'on_hold',
                   ),
@@ -150,31 +148,34 @@ class MyProjectsScreen extends GetView<ProjectsController> {
   }
 }
 
+// ── Filter chip ───────────────────────────────────────────────────────────────
+
 class _FilterChip extends StatelessWidget {
   final String label;
-  final String value;
   final bool selected;
   final VoidCallback onTap;
 
   const _FilterChip({
     required this.label,
-    required this.value,
     required this.selected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+          color: selected ? cs.primary : Colors.transparent,
+          borderRadius:
+              BorderRadius.circular(AppDimensions.radiusFull),
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.borderLight,
+            color: selected ? cs.primary : Theme.of(context).dividerColor,
           ),
         ),
         child: Text(
@@ -182,7 +183,7 @@ class _FilterChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: selected ? Colors.white : AppColors.textSecondaryLight,
+            color: selected ? Colors.white : cs.onSurfaceVariant,
           ),
         ),
       ),
@@ -190,13 +191,17 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+// ── Project card ──────────────────────────────────────────────────────────────
+
 class _ProjectCard extends StatelessWidget {
   final ProjectModel project;
   const _ProjectCard({required this.project});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs      = Theme.of(context).colorScheme;
+    final divider = Theme.of(context).dividerColor;
+
     return AppCard(
       onTap: () {
         Get.find<ProjectsController>().selectProject(project);
@@ -208,13 +213,14 @@ class _ProjectCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 40, height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.infoLight,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                  color: cs.primary.withValues(alpha: 0.1),
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusSm),
                 ),
-                child: const Icon(Icons.home_outlined, color: AppColors.primary, size: 20),
+                child: Icon(Icons.home_outlined,
+                    color: cs.primary, size: 20),
               ),
               const SizedBox(width: AppDimensions.md),
               Expanded(
@@ -222,10 +228,8 @@ class _ProjectCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(project.name, style: AppTextStyles.h4(context)),
-                    Text(
-                      '${project.area}, ${project.city}',
-                      style: AppTextStyles.caption(context),
-                    ),
+                    Text('${project.area}, ${project.city}',
+                        style: AppTextStyles.caption(context)),
                     Text(
                       'Started ${project.startDate != null ? DateFormatter.formatDateShort(project.startDate!) : '—'}',
                       style: AppTextStyles.caption(context),
@@ -242,14 +246,14 @@ class _ProjectCard extends StatelessWidget {
             children: [
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusFull),
                   child: LinearProgressIndicator(
                     value: project.progress,
                     minHeight: AppDimensions.progressBarHeight,
-                    backgroundColor:
-                        isDark ? AppColors.borderDark : AppColors.dividerLight,
+                    backgroundColor: divider,
                     valueColor:
-                        const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        AlwaysStoppedAnimation<Color>(cs.primary),
                   ),
                 ),
               ),
@@ -281,7 +285,7 @@ class _ProjectCard extends StatelessWidget {
 
   BadgeVariant _badgeVariant(String label) {
     if (label == 'ON TRACK') return BadgeVariant.onTrack;
-    if (label == 'AT RISK') return BadgeVariant.atRisk;
+    if (label == 'AT RISK')  return BadgeVariant.atRisk;
     if (label.startsWith('LATE')) return BadgeVariant.late;
     return BadgeVariant.inProgress;
   }
@@ -290,7 +294,7 @@ class _ProjectCard extends StatelessWidget {
     if (dt == null) return 'recently';
     final diff = DateTime.now().difference(dt);
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inHours < 24)   return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
   }
 }

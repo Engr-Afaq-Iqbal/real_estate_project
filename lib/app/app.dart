@@ -7,6 +7,7 @@ import '../presentation/routes/app_routes.dart';
 import '../presentation/theme/app_theme.dart';
 import '../core/constants/storage_keys.dart';
 import '../core/storage/local_storage.dart';
+import '../features/settings/controllers/settings_controller.dart';
 import 'app_binding.dart';
 
 class BuildOSApp extends StatelessWidget {
@@ -19,43 +20,39 @@ class BuildOSApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (_, child) {
-        return GetMaterialApp(
-          title: 'BuildOS',
-          debugShowCheckedModeBanner: false,
+        // GetBuilder listens to update(['app_theme']) calls in SettingsController.
+        // This rebuilds GetMaterialApp with the new primary color applied to BOTH
+        // theme and darkTheme — the only reliable way in GetX 4.x to make
+        // darkTheme reactive (Get.changeTheme() only updates the light theme).
+        return GetBuilder<SettingsController>(
+          id: 'app_theme',
+          init: Get.find<SettingsController>(), // already registered in main.dart
+          builder: (settings) => GetMaterialApp(
+            title: 'BuildOS',
+            debugShowCheckedModeBanner: false,
 
-          // ── Theme ──────────────────────────────────────────────────────
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: _resolveThemeMode(),
+            // ── Theme — both driven by SettingsController ─────────────────
+            theme:     AppTheme.lightWith(settings.currentPrimary),
+            darkTheme: AppTheme.darkWith(settings.currentPrimary),
+            themeMode: settings.currentThemeMode,
 
-          // ── Localization ───────────────────────────────────────────────
-          translations: AppTranslations(),
-          locale: _resolveLocale(),
-          fallbackLocale: const Locale('en', 'US'),
+            // ── Localization ──────────────────────────────────────────────
+            translations: AppTranslations(),
+            locale: _resolveLocale(),
+            fallbackLocale: const Locale('en', 'US'),
 
-          // ── Navigation ─────────────────────────────────────────────────
-          initialRoute: AppRoutes.splash,
-          getPages: AppPages.pages,
-          initialBinding: AppBinding(),
+            // ── Navigation ────────────────────────────────────────────────
+            initialRoute: AppRoutes.splash,
+            getPages: AppPages.pages,
+            initialBinding: AppBinding(),
 
-          // ── Default transitions ────────────────────────────────────────
-          defaultTransition: Transition.rightToLeft,
-          transitionDuration: const Duration(milliseconds: 280),
+            // ── Default transitions ───────────────────────────────────────
+            defaultTransition: Transition.rightToLeft,
+            transitionDuration: const Duration(milliseconds: 280),
+          ),
         );
       },
     );
-  }
-
-  ThemeMode _resolveThemeMode() {
-    final saved = LocalStorage.getString(StorageKeys.themeMode);
-    switch (saved) {
-      case 'light':
-        return ThemeMode.light;
-      case 'dark':
-        return ThemeMode.dark;
-      default:
-        return ThemeMode.system;
-    }
   }
 
   Locale _resolveLocale() {

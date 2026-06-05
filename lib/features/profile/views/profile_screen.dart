@@ -36,8 +36,8 @@ class ProfileScreen extends GetView<ProfileController> {
                       Obx(() => Container(
                         width: 80,
                         height: 80,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
                           shape: BoxShape.circle,
                         ),
                         child: Center(
@@ -58,9 +58,11 @@ class ProfileScreen extends GetView<ProfileController> {
                           width: 26,
                           height: 26,
                           decoration: BoxDecoration(
-                            color: AppColors.accent,
+                            color: Theme.of(context).colorScheme.primary,
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+                            border: Border.all(
+                                color: Theme.of(context).colorScheme.surface,
+                                width: 2),
                           ),
                           child: const Icon(Icons.edit_rounded, size: 12, color: Colors.white),
                         ),

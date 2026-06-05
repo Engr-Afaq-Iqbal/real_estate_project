@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'core/storage/local_storage.dart';
+import 'features/settings/controllers/settings_controller.dart';
 import 'app/app.dart';
 
 void main() async {
@@ -20,8 +22,12 @@ void main() async {
     ),
   );
 
-  // Initialize local storage
+  // Initialize local storage before anything reads from it
   await LocalStorage.init();
+
+  // Pre-register SettingsController so app.dart can reactively drive
+  // both theme and darkTheme from it before GetMaterialApp is built.
+  Get.put<SettingsController>(SettingsController(), permanent: true);
 
   // TODO: Uncomment when Firebase is configured:
   // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

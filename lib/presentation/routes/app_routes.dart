@@ -53,7 +53,8 @@ abstract class AppRoutes {
   static const notifications = '/notifications';
 
   // ── Settings & Profile ────────────────────────────────────────────────────
-  static const settings    = '/settings';
-  static const profile     = '/profile';
-  static const editProfile = '/profile/edit';
+  static const settings        = '/settings';
+  static const profile         = '/profile';
+  static const editProfile     = '/profile/edit';
+  static const profileDetails  = '/settings/profile-details';
 }

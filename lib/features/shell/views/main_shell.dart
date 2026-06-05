@@ -3,18 +3,12 @@ import 'package:get/get.dart';
 import '../controllers/shell_controller.dart';
 import '../../../presentation/widgets/layout/bottom_nav_bar.dart';
 
-// Tabs (in order)
+// 3-tab navigation: Home | Projects | Settings
 import '../../dashboard/views/homeowner_dashboard_screen.dart';
 import '../../dashboard/views/developer_dashboard_screen.dart';
 import '../../projects/views/my_projects_screen.dart';
-import '../../updates/views/photo_video_feed_screen.dart';
-import '../../notifications/views/notifications_screen.dart';
-import '../../profile/views/profile_screen.dart';
+import '../../settings/views/settings_screen.dart';
 
-/// New navigation: Dashboard | Projects | Updates | Notifications | Profile
-///
-/// Calculator → Dashboard widget (expandable card)
-/// Chat       → Project detail tab
 class MainShell extends GetView<ShellController> {
   const MainShell({super.key});
 
@@ -35,20 +29,16 @@ class MainShell extends GetView<ShellController> {
     });
   }
 
-  // Tab 0: Dashboard  1: Projects  2: Updates  3: Notifications  4: Profile
+  // Tab 0: Dashboard  |  Tab 1: Projects  |  Tab 2: Settings
   static const _homeownerScreens = [
     HomeownerDashboardScreen(),
     MyProjectsScreen(),
-    PhotoVideoFeedScreen(),
-    NotificationsScreen(),
-    ProfileScreen(),
+    SettingsScreen(),
   ];
 
   static const _developerScreens = [
     DeveloperDashboardScreen(),
     MyProjectsScreen(),
-    PhotoVideoFeedScreen(),
-    NotificationsScreen(),
-    ProfileScreen(),
+    SettingsScreen(),
   ];
 }

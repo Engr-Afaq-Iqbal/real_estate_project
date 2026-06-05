@@ -16,14 +16,18 @@ class StageDetailScreen extends GetView<ProjectsController> {
 
   @override
   Widget build(BuildContext context) {
-    final stage = controller.currentStage;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final stage   = controller.currentStage;
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+    final divider = Theme.of(context).dividerColor;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(stage?.name ?? 'Stage Detail'),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz_rounded)),
+          IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.more_horiz_rounded)),
         ],
       ),
       body: stage == null
@@ -35,22 +39,21 @@ class StageDetailScreen extends GetView<ProjectsController> {
                   margin: const EdgeInsets.all(AppDimensions.pagePaddingH),
                   padding: const EdgeInsets.all(AppDimensions.base),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.cardDark : AppColors.cardLight,
+                    color: surface,
                     borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-                    border: Border.all(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
+                    border: Border.all(color: divider),
                   ),
                   child: Row(
                     children: [
                       Container(
-                        width: 44,
-                        height: 44,
+                        width: 44, height: 44,
                         decoration: BoxDecoration(
-                          color: AppColors.infoLight,
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                          color: cs.primary.withValues(alpha: 0.1),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusSm),
                         ),
-                        child: const Icon(Icons.business_outlined, color: AppColors.primary, size: 22),
+                        child: Icon(Icons.business_outlined,
+                            color: cs.primary, size: 22),
                       ),
                       const SizedBox(width: AppDimensions.md),
                       Expanded(
@@ -59,7 +62,9 @@ class StageDetailScreen extends GetView<ProjectsController> {
                           children: [
                             Text(stage.name, style: AppTextStyles.h3(context)),
                             const SizedBox(height: 2),
-                            AppBadge(label: 'IN PROGRESS', variant: BadgeVariant.inProgress),
+                            const AppBadge(
+                                label: 'IN PROGRESS',
+                                variant: BadgeVariant.inProgress),
                           ],
                         ),
                       ),
@@ -71,8 +76,8 @@ class StageDetailScreen extends GetView<ProjectsController> {
                           '${stage.progress.toStringAsFixed(0)}%',
                           style: AppTextStyles.labelSmall(context),
                         ),
-                        progressColor: AppColors.primary,
-                        backgroundColor: isDark ? AppColors.borderDark : AppColors.dividerLight,
+                        progressColor: cs.primary,
+                        backgroundColor: divider,
                       ),
                     ],
                   ),
@@ -80,7 +85,8 @@ class StageDetailScreen extends GetView<ProjectsController> {
 
                 // Date stats
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppDimensions.pagePaddingH),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.pagePaddingH),
                   child: Row(
                     children: [
                       _DateStat(
@@ -98,7 +104,8 @@ class StageDetailScreen extends GetView<ProjectsController> {
                       _DateStat(
                         label: 'DAYS LEFT',
                         value: '${stage.daysLeft} days',
-                        valueColor: stage.daysLeft < 7 ? AppColors.warning : null,
+                        valueColor:
+                            stage.daysLeft < 7 ? AppColors.warning : null,
                       ),
                     ],
                   ),
@@ -112,9 +119,9 @@ class StageDetailScreen extends GetView<ProjectsController> {
                   child: Expanded(
                     child: Column(
                       children: [
-                        const TabBar(
+                        TabBar(
                           isScrollable: true,
-                          tabs: [
+                          tabs: const [
                             Tab(text: 'Updates'),
                             Tab(text: 'Expenses'),
                             Tab(text: 'Materials'),
@@ -140,7 +147,8 @@ class StageDetailScreen extends GetView<ProjectsController> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(AppDimensions.pagePaddingH),
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: AppColors.dividerLight)),
+          color: surface,
+          border: Border(top: BorderSide(color: divider)),
         ),
         child: AppButton(
           label: '+ Log Expense for Stage',
@@ -156,10 +164,12 @@ class _DateStat extends StatelessWidget {
   final String value;
   final Color? valueColor;
 
-  const _DateStat({required this.label, required this.value, this.valueColor});
+  const _DateStat(
+      {required this.label, required this.value, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,7 +181,7 @@ class _DateStat extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: valueColor ?? AppTextStyles.h4(context).color,
+              color: valueColor ?? cs.onSurface,
             ),
           ),
         ],
@@ -186,12 +196,16 @@ class _ExpensesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs      = Theme.of(context).colorScheme;
+    final surface = cs.surface;
+    final divider = Theme.of(context).dividerColor;
+
     final mockExpenses = [
-      {'name': 'Cement — Lucky 120 bags', 'category': 'Materials', 'date': '20 May', 'amount': 68400.0, 'hasReceipt': true},
-      {'name': 'Mason wages — week 8', 'category': 'Labor', 'date': '18 May', 'amount': 42000.0, 'hasReceipt': false},
-      {'name': 'Steel TMT 60 grade — 2.4 ton', 'category': 'Materials', 'date': '14 May', 'amount': 684000.0, 'hasReceipt': true},
-      {'name': 'Mixer rental · 3 days', 'category': 'Equipment', 'date': '12 May', 'amount': 18500.0, 'hasReceipt': true},
-      {'name': 'Bricks · 8,000 pcs', 'category': 'Materials', 'date': '10 May', 'amount': 112000.0, 'hasReceipt': false},
+      {'name': 'Cement — Lucky 120 bags',       'category': 'Materials', 'date': '20 May', 'amount': 68400.0,  'hasReceipt': true},
+      {'name': 'Mason wages — week 8',           'category': 'Labor',     'date': '18 May', 'amount': 42000.0,  'hasReceipt': false},
+      {'name': 'Steel TMT 60 grade — 2.4 ton',  'category': 'Materials', 'date': '14 May', 'amount': 684000.0, 'hasReceipt': true},
+      {'name': 'Mixer rental · 3 days',          'category': 'Equipment', 'date': '12 May', 'amount': 18500.0,  'hasReceipt': true},
+      {'name': 'Bricks · 8,000 pcs',            'category': 'Materials', 'date': '10 May', 'amount': 112000.0, 'hasReceipt': false},
     ];
 
     return ListView(
@@ -202,7 +216,12 @@ class _ExpensesTab extends StatelessWidget {
           style: AppTextStyles.overline(context),
         ),
         const SizedBox(height: AppDimensions.md),
-        ...mockExpenses.map((e) => _ExpenseRow(expense: e)),
+        ...mockExpenses.map((e) => _ExpenseRow(
+              expense: e,
+              surface: surface,
+              divider: divider,
+              cs: cs,
+            )),
       ],
     );
   }
@@ -210,29 +229,34 @@ class _ExpensesTab extends StatelessWidget {
 
 class _ExpenseRow extends StatelessWidget {
   final Map<String, dynamic> expense;
-  const _ExpenseRow({required this.expense});
+  final Color surface;
+  final Color divider;
+  final ColorScheme cs;
+
+  const _ExpenseRow({
+    required this.expense,
+    required this.surface,
+    required this.divider,
+    required this.cs,
+  });
 
   @override
   Widget build(BuildContext context) {
     final category = expense['category'] as String;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: AppDimensions.md),
       padding: const EdgeInsets.all(AppDimensions.md),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.cardLight,
+        color: surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
+        border: Border.all(color: divider),
       ),
       child: Row(
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 8, height: 8,
             decoration: BoxDecoration(
-              color: _categoryColor(category),
+              color: _categoryColor(category, cs),
               shape: BoxShape.circle,
             ),
           ),
@@ -241,7 +265,8 @@ class _ExpenseRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(expense['name'] as String, style: AppTextStyles.labelLarge(context)),
+                Text(expense['name'] as String,
+                    style: AppTextStyles.labelLarge(context)),
                 Text(
                   '${expense['category']} · ${expense['date']}',
                   style: AppTextStyles.caption(context),
@@ -257,9 +282,9 @@ class _ExpenseRow extends StatelessWidget {
                 style: AppTextStyles.h4(context),
               ),
               if (expense['hasReceipt'] as bool)
-                const Text(
+                Text(
                   '📎 Receipt',
-                  style: TextStyle(fontSize: 11, color: AppColors.accent),
+                  style: TextStyle(fontSize: 11, color: cs.primary),
                 ),
             ],
           ),
@@ -268,12 +293,10 @@ class _ExpenseRow extends StatelessWidget {
     );
   }
 
-  Color _categoryColor(String cat) {
-    switch (cat) {
-      case 'Materials': return AppColors.primary;
-      case 'Labor': return AppColors.success;
-      case 'Equipment': return AppColors.warning;
-      default: return AppColors.textSecondaryLight;
-    }
-  }
+  Color _categoryColor(String cat, ColorScheme cs) => switch (cat) {
+        'Materials' => cs.primary,
+        'Labor'     => AppColors.success,
+        'Equipment' => AppColors.warning,
+        _           => cs.onSurfaceVariant,
+      };
 }
