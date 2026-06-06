@@ -7,6 +7,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../projects/data/models/project_model.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../presentation/routes/app_routes.dart';
+import '../../../presentation/widgets/common/error_state_widget.dart';
 
 // Semantic colours that never change with theme
 const _kSuccess = Color(0xFF16A34A);
@@ -40,6 +41,11 @@ class HomeownerDashboardScreen extends GetView<DashboardController> {
                   return Center(
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: cs.primary),
+                  );
+                }
+                if (controller.hasLoadError.value) {
+                  return ErrorStateWidget(
+                    onRetry: controller.loadDashboard,
                   );
                 }
                 return RefreshIndicator(
@@ -343,12 +349,32 @@ class _MarketPriceWidget extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: cs.onSurface)),
               ),
-              Text('Lahore · June 2026',
-                  style: GoogleFonts.inter(
-                      fontSize: 11, color: cs.onSurfaceVariant)),
+              // Refresh button (Fix 11)
+              Obx(() => controller.isRefreshingPrices.value
+                  ? const SizedBox(
+                      width: 18, height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : GestureDetector(
+                      onTap: controller.refreshMarketPrices,
+                      child: Icon(Icons.refresh_rounded,
+                          size: 18, color: cs.onSurfaceVariant),
+                    )),
             ],
           ),
-          const SizedBox(height: 14),
+          // Last updated label (Fix 11)
+          Obx(() {
+            final lu = controller.marketPricesLastUpdated.value;
+            if (lu == null) return const SizedBox.shrink();
+            final h = lu.hour.toString().padLeft(2, '0');
+            final m = lu.minute.toString().padLeft(2, '0');
+            return Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text('Last updated: $h:$m',
+                  style: GoogleFonts.inter(
+                      fontSize: 10, color: cs.onSurfaceVariant)),
+            );
+          }),
+          const SizedBox(height: 12),
           Obx(() {
             final prices = controller.marketPrices;
             if (prices.isEmpty) return const SizedBox.shrink();
@@ -358,7 +384,18 @@ class _MarketPriceWidget extends StatelessWidget {
                   .toList(),
             );
           }),
-          const SizedBox(height: 12),
+          // Disclaimer (Fix 11)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Prices are indicative. Verify with local suppliers.',
+              style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontStyle: FontStyle.italic,
+                  color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
+            ),
+          ),
+          const SizedBox(height: 10),
           GestureDetector(
             onTap: () => Get.toNamed(AppRoutes.materialCalculator),
             child: Container(

@@ -75,6 +75,52 @@ class CurrencyFormatter {
     return amount.toStringAsFixed(0);
   }
 
+  // ── PKR / INR Lakh-Crore formatting (spec-compliant) ─────────────────────
+
+  /// Formats per the lakh-crore spec:
+  /// <1000 → "PKR 850"  |  1k–99,999 → "PKR 12,500"
+  /// 1L–9.99Cr → "PKR 8.5 Lakh"  |  ≥1Cr → "PKR 1.2 Crore"
+  static String formatPKR(double amount) {
+    if (amount < 1000) {
+      return 'PKR ${amount.toStringAsFixed(0)}';
+    } else if (amount < 100000) {
+      return 'PKR ${NumberFormat('#,##0', 'en_US').format(amount.toInt())}';
+    } else if (amount < 10000000) {
+      final lakh = amount / 100000;
+      final formatted = lakh == lakh.truncateToDouble()
+          ? lakh.toStringAsFixed(0)
+          : lakh.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '');
+      return 'PKR $formatted Lakh';
+    } else {
+      final crore = amount / 10000000;
+      final formatted = crore == crore.truncateToDouble()
+          ? crore.toStringAsFixed(0)
+          : crore.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '');
+      return 'PKR $formatted Crore';
+    }
+  }
+
+  /// Same lakh-crore logic with ₹ symbol for INR.
+  static String formatINR(double amount) {
+    if (amount < 1000) {
+      return '₹${amount.toStringAsFixed(0)}';
+    } else if (amount < 100000) {
+      return '₹${NumberFormat('#,##0', 'en_US').format(amount.toInt())}';
+    } else if (amount < 10000000) {
+      final lakh = amount / 100000;
+      final formatted = lakh == lakh.truncateToDouble()
+          ? lakh.toStringAsFixed(0)
+          : lakh.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '');
+      return '₹$formatted Lakh';
+    } else {
+      final crore = amount / 10000000;
+      final formatted = crore == crore.truncateToDouble()
+          ? crore.toStringAsFixed(0)
+          : crore.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '');
+      return '₹$formatted Crore';
+    }
+  }
+
   // ── Lakh / Crore shortcuts (backward compat) ─────────────────────────────
 
   static String formatLakh(double amount, {String currency = 'PKR'}) {

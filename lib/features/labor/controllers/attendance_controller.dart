@@ -100,16 +100,21 @@ class AttendanceController extends GetxController {
     );
   }
 
-  void setOvertimeHours(String laborId, DateTime date, double hours) {
+  /// Sets OT hours, capped at [kMaxOvertimeHoursPerDay].
+  /// Returns the actual hours set (clamped) or null if invalid.
+  double? setOvertimeHours(String laborId, DateTime date, double hours) {
+    if (hours < 0) return null;
+    final clamped = hours.clamp(0.0, kMaxOvertimeHoursPerDay);
     final current = getRecord(laborId, date);
     _updateRecord(
       laborId,
       date,
       current.copyWith(
         status: AttendanceStatus.overtime,
-        overtimeHours: hours,
+        overtimeHours: clamped,
       ),
     );
+    return clamped;
   }
 
   void _updateRecord(String laborId, DateTime date, AttendanceModel record) {
@@ -149,7 +154,9 @@ class AttendanceController extends GetxController {
   }
 
   String get formattedWeeklyTotal =>
-      CurrencyFormatter.formatCompact(weeklyTotal);
+      CurrencyFormatter.formatPKR(weeklyTotal);
+
+  static const double kMaxOvertimeHoursPerDay = 12.0;
 
   // ── Submit attendance ─────────────────────────────────────────────────────
 

@@ -221,21 +221,15 @@ class _BottomCta extends StatelessWidget {
       child: Obx(() {
         final isLast     = controller.isLastStep;
         final isCreating = controller.isCreating.value;
-        final canCont    = controller.canContinue;
 
-        return AnimatedOpacity(
-          duration: const Duration(milliseconds: 200),
-          opacity: canCont ? 1.0 : 0.45,
-          child: GestureDetector(
-            onTap: canCont
-                ? () {
-                    if (isLast) {
-                      controller.createProject();
-                    } else {
-                      controller.nextStep();
-                    }
-                  }
-                : null,
+        return GestureDetector(
+            onTap: () {
+              if (isLast) {
+                controller.createProject();
+              } else {
+                controller.nextStep();
+              }
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               height: 52,
@@ -243,14 +237,12 @@ class _BottomCta extends StatelessWidget {
               decoration: BoxDecoration(
                 color: cs.primary,
                 borderRadius: BorderRadius.circular(14),
-                boxShadow: canCont
-                    ? [
-                        BoxShadow(
-                            color: cs.primary.withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4))
-                      ]
-                    : [],
+                boxShadow: [
+                  BoxShadow(
+                      color: cs.primary.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4)),
+                ],
               ),
               child: isCreating
                   ? const SizedBox(
@@ -265,7 +257,6 @@ class _BottomCta extends StatelessWidget {
                           color: Colors.white),
                     ),
             ),
-          ),
         );
       }),
     );

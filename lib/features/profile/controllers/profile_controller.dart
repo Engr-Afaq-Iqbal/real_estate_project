@@ -20,7 +20,34 @@ class ProfileController extends GetxController {
   double get rating => _auth.currentUser.value?.rating ?? 0.0;
   bool get isHomeowner => _auth.currentUser.value?.isHomeowner ?? true;
 
-  Future<void> saveProfile() async {
+  Future<bool> saveProfile({
+    required String newName,
+    required String newEmail,
+    required String newPhone,
+    required String newCity,
+  }) async {
+    if (newName.trim().isEmpty) return false;
+
+    isSaving.value = true;
+    await Future.delayed(const Duration(seconds: 1));
+
+    final current = _auth.currentUser.value;
+    if (current != null) {
+      _auth.currentUser.value = current.copyWith(
+        name:  newName.trim(),
+        email: newEmail.trim().isEmpty ? null : newEmail.trim(),
+        phone: newPhone.trim().isEmpty ? current.phone : newPhone.trim(),
+        city:  newCity.trim().isEmpty  ? current.city  : newCity.trim(),
+      );
+    }
+
+    isSaving.value = false;
+    isEditing.value = false;
+    return true;
+  }
+
+  @Deprecated('Use saveProfile()')
+  Future<void> saveProfileLegacy() async {
     isSaving.value = true;
     await Future.delayed(const Duration(seconds: 1));
     isSaving.value = false;

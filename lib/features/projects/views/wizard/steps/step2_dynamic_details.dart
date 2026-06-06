@@ -93,19 +93,44 @@ class _TextInputField extends GetView<ProjectWizardController> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _FieldLabel(field.label),
-        TextFormField(
-          initialValue: controller.getFieldValue<String>(field.key) ?? '',
-          decoration: _inputDeco(context,
-              hint: field.hint ?? 'Enter ${field.label.toLowerCase()}'),
-          style: GoogleFonts.inter(fontSize: 14, color: cs.onSurface),
-          onChanged: (v) => controller.setFieldValue(field.key, v),
-        ),
-      ],
-    );
+    final isNameField = field.key == 'name';
+    return Obx(() {
+      final errorText = isNameField ? controller.nameError.value : null;
+      final hasError  = errorText != null;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _FieldLabel(field.label),
+          TextFormField(
+            initialValue: controller.getFieldValue<String>(field.key) ?? '',
+            decoration: _inputDeco(context,
+                hint: field.hint ?? 'Enter ${field.label.toLowerCase()}').copyWith(
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(
+                      color: hasError ? cs.error : Theme.of(context).dividerColor)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(
+                      color: hasError ? cs.error : cs.primary, width: 1.5)),
+            ),
+            style: GoogleFonts.inter(fontSize: 14, color: cs.onSurface),
+            onChanged: (v) {
+              controller.setFieldValue(field.key, v);
+              if (isNameField && controller.nameError.value != null) {
+                controller.nameError.value = null;
+              }
+            },
+          ),
+          if (hasError)
+            Padding(
+              padding: const EdgeInsets.only(top: 5, left: 4),
+              child: Text(errorText!,
+                  style: GoogleFonts.inter(fontSize: 12, color: cs.error)),
+            ),
+        ],
+      );
+    });
   }
 }
 

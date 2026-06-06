@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../controllers/projects_controller.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../../presentation/theme/app_colors.dart';
 import '../../../presentation/theme/app_dimensions.dart';
 import '../../../presentation/theme/app_text_styles.dart';
 import '../../../presentation/widgets/common/app_button.dart';
 import '../../../presentation/widgets/common/app_card.dart';
 
-class ProjectHandoverScreen extends StatelessWidget {
+class ProjectHandoverScreen extends GetView<ProjectsController> {
   const ProjectHandoverScreen({super.key});
 
   @override
@@ -14,122 +16,156 @@ class ProjectHandoverScreen extends StatelessWidget {
     final cs      = Theme.of(context).colorScheme;
     final divider = Theme.of(context).dividerColor;
 
-    const checklistItems = [
-      'All snagging resolved',
-      'Final inspection done',
-      'Utility connections active',
-      'Keys exchanged',
-      'Documents handed over',
-      'Final payment cleared',
-    ];
-
     return Scaffold(
       appBar: AppBar(title: Text('project_handover'.tr)),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.pagePaddingH),
-        child: Column(
-          children: [
-            // Celebration banner
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppDimensions.xl),
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 72, height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.home_outlined,
-                        color: AppColors.success, size: 40),
-                  ),
-                  const SizedBox(height: AppDimensions.md),
-                  Text(
-                    '🎉 Construction Complete!',
-                    style: AppTextStyles.h2(context)
-                        .copyWith(color: AppColors.success),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'DHA House — 10 Marla · Handover on 10 Oct 2025',
-                    style: AppTextStyles.caption(context),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
+      body: Obx(() {
+        final project = controller.selectedProject.value;
+        if (project == null) {
+          return const Center(child: Text('No project selected'));
+        }
 
-            const SizedBox(height: AppDimensions.xl),
+        final stages     = project.stages;
+        final totalStages = stages.length;
 
-            // Stats
-            AppCard(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _HandoverStat(value: '12', label: 'Months'),
-                  ),
-                  Container(width: 1, height: 40, color: divider),
-                  Expanded(
-                    child: _HandoverStat(
-                      value: 'PKR\n48.5L',
-                      label: 'Total cost',
-                      valueColor: cs.primary,
-                    ),
-                  ),
-                  Container(width: 1, height: 40, color: divider),
-                  Expanded(
-                    child: _HandoverStat(value: '10 / 10', label: 'Stages'),
-                  ),
-                ],
-              ),
-            ),
+        // Count completed stages using the override map
+        int completedCount = 0;
+        for (final s in stages) {
+          final status = controller.stageStatus(s.id, s.status.name);
+          if (status == 'completed') completedCount++;
+        }
 
-            const SizedBox(height: AppDimensions.xl),
+        final allDone    = totalStages > 0 && completedCount == totalStages;
+        final totalCost  = project.actualCost > 0 ? project.actualCost : project.budgetAmount;
+        final months     = project.startDate != null
+            ? (DateTime.now().difference(project.startDate!).inDays / 30).round()
+            : 0;
 
-            // Checklist
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text('handover_checklist'.tr,
-                            style: AppTextStyles.h3(context)),
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(AppDimensions.pagePaddingH),
+          child: Column(
+            children: [
+              // Banner
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppDimensions.xl),
+                decoration: BoxDecoration(
+                  color: allDone
+                      ? AppColors.success.withValues(alpha: 0.1)
+                      : cs.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 72, height: 72,
+                      decoration: BoxDecoration(
+                        color: allDone
+                            ? AppColors.success.withValues(alpha: 0.2)
+                            : cs.primary.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
                       ),
-                      const Text(
-                        '6 of 6 Complete',
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.success),
+                      child: Icon(
+                        allDone ? Icons.home_outlined : Icons.construction_rounded,
+                        color: allDone ? AppColors.success : cs.primary,
+                        size: 40,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.md),
-                  ...checklistItems.map(
-                    (item) => _ChecklistRow(label: item, done: true),
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+                    Text(
+                      allDone ? '🎉 Construction Complete!' : '🏗️ In Progress',
+                      style: AppTextStyles.h2(context).copyWith(
+                          color: allDone ? AppColors.success : cs.primary),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      project.name,
+                      style: AppTextStyles.caption(context),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: AppDimensions.xl),
+              const SizedBox(height: AppDimensions.xl),
 
-            AppButton(
-              label: '🔑 Mark Project Complete',
-              onPressed: () => Get.back(),
-            ),
+              // Stats
+              AppCard(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _HandoverStat(
+                          value: '$months', label: 'Months'),
+                    ),
+                    Container(width: 1, height: 40, color: divider),
+                    Expanded(
+                      child: _HandoverStat(
+                        value: CurrencyFormatter.formatPKR(totalCost),
+                        label: 'Total cost',
+                        valueColor: cs.primary,
+                      ),
+                    ),
+                    Container(width: 1, height: 40, color: divider),
+                    Expanded(
+                      child: _HandoverStat(
+                          value: '$completedCount / $totalStages',
+                          label: 'Stages'),
+                    ),
+                  ],
+                ),
+              ),
 
-            const SizedBox(height: AppDimensions.xxl),
-          ],
-        ),
-      ),
+              const SizedBox(height: AppDimensions.xl),
+
+              // Checklist
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('handover_checklist'.tr,
+                              style: AppTextStyles.h3(context)),
+                        ),
+                        Text(
+                          '$completedCount of $totalStages Complete',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: allDone ? AppColors.success : cs.primary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+                    if (stages.isEmpty)
+                      Text('No stages found for this project.',
+                          style: AppTextStyles.bodySmall(context))
+                    else
+                      ...stages.map((stage) {
+                        final status = controller.stageStatus(
+                            stage.id, stage.status.name);
+                        final done = status == 'completed';
+                        return _ChecklistRow(
+                            label: stage.name, done: done);
+                      }),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: AppDimensions.xl),
+
+              AppButton(
+                label: allDone
+                    ? '🔑 Mark Project Complete'
+                    : 'Complete all stages to finalize',
+                onPressed: allDone ? () => Get.back() : null,
+              ),
+
+              const SizedBox(height: AppDimensions.xxl),
+            ],
+          ),
+        );
+      }),
     );
   }
 }
@@ -150,7 +186,7 @@ class _HandoverStat extends StatelessWidget {
           value,
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: FontWeight.w700,
             color: valueColor ?? cs.primary,
           ),
@@ -179,25 +215,20 @@ class _ChecklistRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: done ? AppColors.success : Colors.transparent,
               shape: BoxShape.circle,
-              border: Border.all(
-                  color: done ? AppColors.success : divider),
+              border: Border.all(color: done ? AppColors.success : divider),
             ),
             child: done
-                ? const Icon(Icons.check_rounded,
-                    size: 14, color: Colors.white)
+                ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
                 : null,
           ),
           const SizedBox(width: AppDimensions.md),
-          Expanded(
-              child: Text(label, style: AppTextStyles.bodyMedium(context))),
+          Expanded(child: Text(label, style: AppTextStyles.bodyMedium(context))),
           if (done)
-            const Text(
-              'DONE',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.success),
-            ),
+            const Text('DONE',
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.success)),
         ],
       ),
     );

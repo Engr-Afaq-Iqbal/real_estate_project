@@ -26,6 +26,7 @@ class ProjectWizardController extends GetxController {
   bool get isLastStep  => currentStep.value == totalSteps - 1;
 
   void nextStep() {
+    if (!validateCurrentStep()) return;
     if (currentStep.value < totalSteps - 1) currentStep.value++;
   }
 
@@ -311,6 +312,96 @@ class ProjectWizardController extends GetxController {
     );
   }
 
+  // ── Per-field error messages ──────────────────────────────────────────────
+  final nameError         = RxnString();
+  final budgetError       = RxnString();
+  final locationError     = RxnString();
+  final plotSizeError     = RxnString();
+  final coveredAreaError  = RxnString();
+
+  // ── Budget helper text (lakh/crore representation) ────────────────────────
+  String get budgetHelperText {
+    final b = budget;
+    if (b <= 0) return '';
+    return CurrencyFormatter.formatPKR(b);
+  }
+
+  // ── Budget min/max constants ──────────────────────────────────────────────
+  static const double kMinBudget  = 10000;
+  static const double kMaxBudget  = 10000000000;
+
+  // ── Validate current step, set error messages, return true if ok ──────────
+  bool validateCurrentStep() {
+    bool valid = true;
+
+    switch (currentStep.value) {
+      case 0:
+        break; // type always selected
+
+      case 1:
+        final nm = (fieldValues['name'] as String? ?? '').trim();
+        if (nm.isEmpty) {
+          nameError.value = 'Please enter a project name';
+          valid = false;
+        } else {
+          nameError.value = null;
+        }
+        break;
+
+      case 2:
+        if (effectiveCity.trim().isEmpty) {
+          locationError.value = 'Please select a country and city';
+          valid = false;
+        } else {
+          locationError.value = null;
+        }
+        if (showPlotArea) {
+          final plotVal = double.tryParse(plotSizeCtrl.text.trim());
+          if (plotVal == null || plotVal < 1) {
+            plotSizeError.value = 'Plot size must be at least 1';
+            valid = false;
+          } else {
+            plotSizeError.value = null;
+          }
+          final covVal = double.tryParse(constructionAreaCtrl.text.trim());
+          if (covVal != null && plotVal != null && plotVal >= 1 && covVal > plotVal) {
+            coveredAreaError.value = 'Covered area cannot be larger than plot size';
+            valid = false;
+          } else if (covVal != null && covVal < 1) {
+            coveredAreaError.value = 'Covered area must be at least 1';
+            valid = false;
+          } else {
+            coveredAreaError.value = null;
+          }
+        }
+        break;
+
+      case 3:
+        final b = budget;
+        if (b <= 0) {
+          budgetError.value = 'Please enter a valid budget amount';
+          valid = false;
+        } else if (b < kMinBudget) {
+          budgetError.value = 'Minimum budget is PKR 10,000';
+          valid = false;
+        } else if (b < 0) {
+          budgetError.value = 'Budget cannot be negative';
+          valid = false;
+        } else if (b > kMaxBudget) {
+          budgetError.value = 'Budget cannot exceed PKR 10,000 Crore';
+          valid = false;
+        } else {
+          budgetError.value = null;
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    return valid;
+  }
+
   // ── Validation ────────────────────────────────────────────────────────────
   bool isStepValid(int step) => switch (step) {
         0 => selectedTypeKey.value.isNotEmpty,
@@ -322,7 +413,7 @@ class ProjectWizardController extends GetxController {
         _ => false,
       };
 
-  bool get canContinue => isStepValid(currentStep.value);
+  bool get canContinue => true; // always enabled, validation fires on tap
 
   // ── Cleanup ───────────────────────────────────────────────────────────────
   @override

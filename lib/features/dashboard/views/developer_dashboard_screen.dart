@@ -10,6 +10,7 @@ import '../../../presentation/theme/app_text_styles.dart';
 import '../../../presentation/widgets/common/app_card.dart';
 import '../../../presentation/widgets/common/app_loading.dart';
 import '../../../presentation/routes/app_routes.dart';
+import '../../../presentation/widgets/common/error_state_widget.dart';
 
 class DeveloperDashboardScreen extends GetView<DashboardController> {
   const DeveloperDashboardScreen({super.key});
@@ -21,6 +22,9 @@ class DeveloperDashboardScreen extends GetView<DashboardController> {
         child: Obx(() {
           if (controller.isLoading.value) {
             return const Center(child: AppLoadingIndicator(size: 32));
+          }
+          if (controller.hasLoadError.value) {
+            return ErrorStateWidget(onRetry: controller.loadDashboard);
           }
           return RefreshIndicator(
             onRefresh: controller.loadDashboard,

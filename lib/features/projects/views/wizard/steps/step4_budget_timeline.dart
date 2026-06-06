@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../controllers/project_wizard_controller.dart';
 import '../../../config/wizard_step_config.dart';
-import '../../../../../core/utils/currency_formatter.dart';
 
 class Step4BudgetTimeline extends GetView<ProjectWizardController> {
   const Step4BudgetTimeline({super.key});
@@ -55,38 +54,81 @@ class _BudgetInput extends GetView<ProjectWizardController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final currency = controller.currencyCode;
-      return TextFormField(
-        controller: controller.budgetCtrl,
-        keyboardType: TextInputType.number,
-        decoration: InputDecoration(
-          hintText: 'Enter total budget',
-          hintStyle: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          prefixIcon: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            child: Text(currency,
-                style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary)),
+      final currency   = controller.currencyCode;
+      final errorText  = controller.budgetError.value;
+      final helperText = controller.budgetHelperText;
+      final hasError   = errorText != null;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextFormField(
+            controller: controller.budgetCtrl,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              hintText: 'Enter total budget',
+              hintStyle: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                child: Text(currency,
+                    style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: hasError
+                            ? Theme.of(context).colorScheme.error
+                            : Theme.of(context).colorScheme.primary)),
+              ),
+              prefixIconConstraints: const BoxConstraints(),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surface,
+              contentPadding: const EdgeInsets.fromLTRB(0, 14, 14, 14),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                      color: hasError
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).dividerColor)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                      color: hasError
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.primary,
+                      width: 1.5)),
+            ),
+            style: GoogleFonts.inter(
+                fontSize: 18, fontWeight: FontWeight.w700,
+                color: hasError
+                    ? Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.primary),
+            onChanged: (v) {
+              controller.onBudgetChanged(v);
+              if (controller.budgetError.value != null) {
+                controller.budgetError.value = null;
+              }
+            },
           ),
-          prefixIconConstraints: const BoxConstraints(),
-          filled: true,
-          fillColor: Theme.of(context).colorScheme.surface,
-          contentPadding: const EdgeInsets.fromLTRB(0, 14, 14, 14),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Theme.of(context).dividerColor)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Theme.of(context).dividerColor)),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5)),
-        ),
-        style: GoogleFonts.inter(
-            fontSize: 18, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary),
-        onChanged: controller.onBudgetChanged,
+          if (hasError)
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 4),
+              child: Text(errorText!,
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.error)),
+            )
+          else if (helperText.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 4),
+              child: Text(helperText,
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.primary)),
+            ),
+        ],
       );
     });
   }
@@ -215,7 +257,7 @@ class _StartDatePicker extends GetView<ProjectWizardController> {
           final picked = await showDatePicker(
             context: context,
             initialDate: date,
-            firstDate: DateTime.now().subtract(const Duration(days: 30)),
+            firstDate: DateTime.now(),
             lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
             builder: (_, child) => Theme(
               data: Theme.of(context).copyWith(

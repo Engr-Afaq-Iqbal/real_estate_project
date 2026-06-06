@@ -204,8 +204,25 @@ class _CityPicker extends GetView<ProjectWizardController> {
                       BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5)),
             ),
             style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
-            onChanged: (v) => controller.customCity.value = v,
+            onChanged: (v) {
+              controller.customCity.value = v;
+              if (controller.locationError.value != null) {
+                controller.locationError.value = null;
+              }
+            },
           ),
+          // Location inline error
+          Obx(() {
+            final err = controller.locationError.value;
+            if (err == null) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(top: 6, left: 4),
+              child: Text(err,
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.error)),
+            );
+          }),
         ],
       );
     });
@@ -310,6 +327,18 @@ class _PlotSizeInput extends GetView<ProjectWizardController> {
                   style: GoogleFonts.inter(
                       fontSize: 11, color: Theme.of(context).colorScheme.primary));
             }),
+            // Plot size inline error (Fix 12)
+            Obx(() {
+              final err = controller.plotSizeError.value;
+              if (err == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 4, left: 2),
+                child: Text(err,
+                    style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.error)),
+              );
+            }),
           ],
         ));
   }
@@ -337,6 +366,11 @@ class _ConstructionAreaInput extends GetView<ProjectWizardController> {
                     keyboardType: TextInputType.number,
                     decoration: _inputDeco(context, 'Covered area'),
                     style: GoogleFonts.inter(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
+                    onChanged: (_) {
+                      if (controller.coveredAreaError.value != null) {
+                        controller.coveredAreaError.value = null;
+                      }
+                    },
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -370,6 +404,18 @@ class _ConstructionAreaInput extends GetView<ProjectWizardController> {
                 ),
               ],
             ),
+            // Covered area inline error (Fix 12)
+            Obx(() {
+              final err = controller.coveredAreaError.value;
+              if (err == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 4, left: 2),
+                child: Text(err,
+                    style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.error)),
+              );
+            }),
           ],
         ));
   }

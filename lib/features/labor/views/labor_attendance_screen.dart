@@ -290,7 +290,12 @@ class _WorkerGridRow extends StatelessWidget {
                     HapticFeedback.selectionClick();
                     controller.cycleStatus(labor.id, day);
                   },
-                  child: Center(child: _StatusCell(status: rec.status)),
+                  onLongPress: () {
+                    if (rec.status == AttendanceStatus.overtime) {
+                      _showOtHoursDialog(context, controller, labor.id, day, rec.overtimeHours);
+                    }
+                  },
+                  child: Center(child: _StatusCell(status: rec.status, otHours: rec.overtimeHours)),
                 ),
               );
             }).toList(),
@@ -310,11 +315,80 @@ class _WorkerGridRow extends StatelessWidget {
   }
 }
 
+// ── OT hours dialog ───────────────────────────────────────────────────────────
+
+void _showOtHoursDialog(
+  BuildContext context,
+  AttendanceController controller,
+  String laborId,
+  DateTime date,
+  double currentHours,
+) {
+  final ctrl = TextEditingController(text: currentHours.toStringAsFixed(0));
+  final errorObs = RxnString();
+
+  showDialog<void>(
+    context: context,
+    builder: (dialogCtx) => AlertDialog(
+      title: const Text('Set Overtime Hours'),
+      content: Obx(() {
+        final err = errorObs.value;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: ctrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Hours (max 12)',
+                suffixText: 'hrs',
+                border: const OutlineInputBorder(),
+                errorText: err,
+              ),
+              onChanged: (_) => errorObs.value = null,
+            ),
+            const SizedBox(height: 8),
+            Text('Long-press any OT cell to edit hours.',
+                style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(dialogCtx).colorScheme.onSurfaceVariant)),
+          ],
+        );
+      }),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogCtx).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final val = double.tryParse(ctrl.text.trim());
+            if (val == null || val < 0) {
+              errorObs.value = 'Please enter a valid number';
+              return;
+            }
+            if (val > AttendanceController.kMaxOvertimeHoursPerDay) {
+              errorObs.value = 'Overtime cannot exceed 12 hours per day';
+              return;
+            }
+            controller.setOvertimeHours(laborId, date, val);
+            Navigator.of(dialogCtx).pop();
+          },
+          child: const Text('Set'),
+        ),
+      ],
+    ),
+  );
+}
+
 // ── Status cell — semantic colors stay fixed regardless of theme ──────────────
 
 class _StatusCell extends StatelessWidget {
   final AttendanceStatus status;
-  const _StatusCell({required this.status});
+  final double otHours;
+  const _StatusCell({required this.status, this.otHours = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -322,7 +396,11 @@ class _StatusCell extends StatelessWidget {
       AttendanceStatus.present  => ('P',  const Color(0xFFDCFCE7), AppColors.success),
       AttendanceStatus.absent   => ('A',  const Color(0xFFFEE2E2), AppColors.error),
       AttendanceStatus.halfDay  => ('½',  const Color(0xFFFEF3C7), AppColors.warning),
-      AttendanceStatus.overtime => ('OT', const Color(0xFFEDE9FE), const Color(0xFF7C3AED)),
+      AttendanceStatus.overtime => (
+          otHours > 0 ? '${otHours.toStringAsFixed(0)}h' : 'OT',
+          const Color(0xFFEDE9FE),
+          const Color(0xFF7C3AED),
+        ),
       AttendanceStatus.leave    => ('L',  Theme.of(context).dividerColor,
                                           Theme.of(context).colorScheme.onSurfaceVariant),
     };
@@ -334,7 +412,9 @@ class _StatusCell extends StatelessWidget {
           color: bg, borderRadius: BorderRadius.circular(6)),
       child: Text(label,
           style: TextStyle(
-              fontSize: 10, fontWeight: FontWeight.w700, color: fg)),
+              fontSize: status == AttendanceStatus.overtime && otHours > 0 ? 8 : 10,
+              fontWeight: FontWeight.w700,
+              color: fg)),
     );
   }
 }

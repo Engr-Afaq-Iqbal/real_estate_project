@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../controllers/profile_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 
+
 class ProfileDetailsScreen extends StatefulWidget {
   const ProfileDetailsScreen({super.key});
 
@@ -19,6 +20,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
   final _isSaving     = false.obs;
   final _selectedRole = 'Homeowner'.obs;
+  final _nameError    = RxnString();
 
   static const _roles = [
     'Homeowner', 'Contractor', 'Architect', 'Civil Engineer',
@@ -45,16 +47,33 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   }
 
   Future<void> _save() async {
+    if (_nameCtrl.text.trim().isEmpty) {
+      _nameError.value = 'Name cannot be empty';
+      return;
+    }
+    _nameError.value = null;
+
+    final ctrl = Get.find<ProfileController>();
     _isSaving.value = true;
-    await Future.delayed(const Duration(seconds: 1));
-    _isSaving.value = false;
-    Get.back();
-    Get.snackbar(
-      'Saved', 'Your profile has been updated',
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
+    final ok = await ctrl.saveProfile(
+      newName:  _nameCtrl.text,
+      newEmail: _emailCtrl.text,
+      newPhone: _phoneCtrl.text,
+      newCity:  _cityCtrl.text,
     );
+    _isSaving.value = false;
+
+    if (ok) {
+      Get.snackbar(
+        'Profile updated successfully', '',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFF16A34A).withValues(alpha: 0.9),
+        colorText: Colors.white,
+        icon: const Icon(Icons.check_circle_rounded, color: Colors.white),
+      );
+    }
   }
 
   @override
@@ -130,8 +149,31 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  _Field(label: 'Full Name', ctrl: _nameCtrl,
-                      hint: 'Ahmed Khan'),
+                  Obx(() {
+                    final err = _nameError.value;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Field(
+                          label: 'Full Name',
+                          ctrl: _nameCtrl,
+                          hint: 'Ahmed Khan',
+                          hasError: err != null,
+                          onChanged: (_) {
+                            if (_nameError.value != null) _nameError.value = null;
+                          },
+                        ),
+                        if (err != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4, left: 2),
+                            child: Text(err,
+                                style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: Theme.of(context).colorScheme.error)),
+                          ),
+                      ],
+                    );
+                  }),
                   const SizedBox(height: 14),
                   _Field(
                     label: 'Email',
@@ -246,6 +288,8 @@ class _Field extends StatelessWidget {
   final String hint;
   final TextInputType? keyboardType;
   final Widget? trailing;
+  final bool hasError;
+  final ValueChanged<String>? onChanged;
 
   const _Field({
     required this.label,
@@ -253,6 +297,8 @@ class _Field extends StatelessWidget {
     required this.hint,
     this.keyboardType,
     this.trailing,
+    this.hasError = false,
+    this.onChanged,
   });
 
   @override
@@ -260,6 +306,7 @@ class _Field extends StatelessWidget {
     final cs      = Theme.of(context).colorScheme;
     final surface = cs.surface;
     final divider = Theme.of(context).dividerColor;
+    final errColor = hasError ? cs.error : divider;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,11 +314,12 @@ class _Field extends StatelessWidget {
         Text(label,
             style: GoogleFonts.inter(
                 fontSize: 12, fontWeight: FontWeight.w500,
-                color: cs.onSurfaceVariant)),
+                color: hasError ? cs.error : cs.onSurfaceVariant)),
         const SizedBox(height: 6),
         TextFormField(
           controller: ctrl,
           keyboardType: keyboardType,
+          onChanged: onChanged,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.inter(
@@ -287,13 +335,14 @@ class _Field extends StatelessWidget {
                 horizontal: 14, vertical: 14),
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: divider)),
+                borderSide: BorderSide(color: errColor)),
             enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: divider)),
+                borderSide: BorderSide(color: errColor)),
             focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: cs.primary, width: 1.5)),
+                borderSide: BorderSide(
+                    color: hasError ? cs.error : cs.primary, width: 1.5)),
           ),
           style: GoogleFonts.inter(fontSize: 14, color: cs.onSurface),
         ),

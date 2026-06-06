@@ -65,11 +65,16 @@ class BudgetAlert {
 
 class DashboardController extends GetxController {
   final isLoading              = false.obs;
+  final hasLoadError           = false.obs;
   final projects               = <ProjectModel>[].obs;
   final unreadNotifications    = 3.obs;
   final marketPrices           = <MarketPrice>[].obs;
   final upcomingTasks          = <UpcomingTask>[].obs;
   final budgetAlerts           = <BudgetAlert>[].obs;
+
+  // Market prices meta (Fix 11)
+  final marketPricesLastUpdated = Rxn<DateTime>();
+  final isRefreshingPrices      = false.obs;
 
   // Calculator widget state
   final calcExpanded           = false.obs;
@@ -85,13 +90,29 @@ class DashboardController extends GetxController {
   }
 
   Future<void> loadDashboard() async {
-    isLoading.value = true;
-    await Future.delayed(const Duration(milliseconds: 600));
-    projects.value       = ProjectModel.mockList();
-    marketPrices.value   = _mockMarketPrices();
-    upcomingTasks.value  = _mockUpcomingTasks();
-    budgetAlerts.value   = _mockBudgetAlerts();
-    isLoading.value      = false;
+    isLoading.value    = true;
+    hasLoadError.value = false;
+    try {
+      await Future.delayed(const Duration(milliseconds: 600));
+      projects.value              = ProjectModel.mockList();
+      marketPrices.value          = _mockMarketPrices();
+      marketPricesLastUpdated.value = DateTime.now();
+      upcomingTasks.value         = _mockUpcomingTasks();
+      budgetAlerts.value          = _mockBudgetAlerts();
+    } catch (_) {
+      hasLoadError.value = true;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> refreshMarketPrices() async {
+    if (isRefreshingPrices.value) return;
+    isRefreshingPrices.value = true;
+    await Future.delayed(const Duration(milliseconds: 900));
+    marketPrices.value = _mockMarketPrices();
+    marketPricesLastUpdated.value = DateTime.now();
+    isRefreshingPrices.value = false;
   }
 
   ProjectModel? get primaryProject =>
