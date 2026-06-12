@@ -1,4 +1,21 @@
-﻿import 'package:flutter/material.dart';
+﻿// ═════════════════════════════════════════════════════════════════════════════
+// Feature temporarily disabled. Full Estimate screen preserved for future
+// implementation.
+//
+// This screen was reachable via the "Full Estimate" button in the dashboard
+// Quick Estimator section (now removed) and the deprecated CalculatorHubScreen.
+// Its HouseEstimatorController is intentionally left registered in
+// CalculatorBinding and untouched.
+//
+// To reactivate:
+//   1. Uncomment this entire file (remove the /* ... */ wrapper below).
+//   2. Restore the import + AppRoutes.houseEstimator GetPage entry in
+//      lib/presentation/routes/app_pages.dart (commented out there).
+//   3. Re-add a navigation entry point.
+// ═════════════════════════════════════════════════════════════════════════════
+
+/*
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../controllers/house_estimator_controller.dart';
@@ -400,4 +417,5 @@ class _InfoChip extends StatelessWidget {
     );
   }
 }
+*/
 

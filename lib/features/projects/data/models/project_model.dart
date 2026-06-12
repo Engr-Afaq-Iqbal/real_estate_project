@@ -276,7 +276,53 @@ class ProjectModel extends Equatable {
 
   // ── Mock data ─────────────────────────────────────────────────────────────
 
-  static List<ProjectModel> mockList() => [
+  static List<ProjectModel> mockList() {
+    final base = _baseProjects();
+    // Generate extra entries to reach 25+ for pagination testing
+    final extras = List.generate(22, (i) {
+      final idx = i + 4;
+      final statuses = ['active', 'active', 'completed', 'on_hold', 'active'];
+      final cities   = ['Lahore', 'Karachi', 'Islamabad', 'Faisalabad', 'Rawalpindi'];
+      final areas    = ['DHA', 'Bahria Town', 'Gulshan', 'Model Town', 'F-10'];
+      final names    = [
+        'Sunrise Villas', 'Al-Noor Residency', 'Imperial Heights',
+        'Falcon Arcade', 'Royal Enclave', 'Green Park', 'Metro Tower',
+        'Heritage Homes', 'Blue Sky Apartments', 'Golden Gate Complex',
+        'Lakeview Cottage', 'Cedar Woods', 'Marble Court', 'Tulip Terrace',
+        'Palm Residency', 'Crystal Bay', 'Urban Nest', 'The Pinnacle',
+        'Landmark Plaza', 'Crescent Heights', 'Prestige Square', 'The Grand',
+      ];
+      final status = statuses[idx % statuses.length];
+      return ProjectModel(
+        id: 'p$idx',
+        ownerId: 'u1',
+        name: '${names[i]} — Block ${String.fromCharCode(65 + i % 5)}',
+        status: status,
+        priority: ['high', 'medium', 'low'][i % 3],
+        cityName: cities[i % cities.length],
+        areaName: areas[i % areas.length],
+        budgetAmount: (2000000 + i * 750000).toDouble(),
+        estimatedCost: (1900000 + i * 700000).toDouble(),
+        actualCost: status == 'completed'
+            ? (1950000 + i * 720000).toDouble()
+            : (500000 + i * 200000).toDouble(),
+        currencyCode: 'PKR',
+        startDate: DateTime(2025, 6, 1).subtract(Duration(days: i * 14)),
+        targetEndDate: DateTime(2026, 12, 31).add(Duration(days: i * 7)),
+        healthScore: 60 + (i * 3 % 40),
+        completionPct: status == 'completed'
+            ? 100
+            : status == 'on_hold'
+                ? 30 + (i * 7 % 40).toDouble()
+                : (10 + i * 4 % 90).toDouble(),
+        workerCount: 5 + i % 20,
+        lastUpdated: DateTime.now().subtract(Duration(hours: i * 3 + 1)),
+      );
+    });
+    return [...base, ...extras];
+  }
+
+  static List<ProjectModel> _baseProjects() => [
         ProjectModel(
           id: 'p1',
           ownerId: 'u1',
@@ -401,7 +447,7 @@ class ProjectModel extends Equatable {
             ),
           ],
         ),
-      ];
+      ];      // end _baseProjects
 
   @override
   List<Object?> get props => [id, status, completionPct, actualCost];

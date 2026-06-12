@@ -31,8 +31,10 @@ class CalculatorHubController extends GetxController {
   void openMaterialCalculator() =>
       Get.toNamed(AppRoutes.materialCalculator);
 
-  void openHouseEstimator() =>
-      Get.toNamed(AppRoutes.houseEstimator);
+  // Feature temporarily disabled. Full Estimate screen preserved for future
+  // implementation — its route is unregistered in app_pages.dart.
+  // void openHouseEstimator() =>
+  //     Get.toNamed(AppRoutes.houseEstimator);
 
   void openWhatIf() =>
       Get.toNamed(AppRoutes.whatIfCalculator);

@@ -327,6 +327,53 @@ class _PlotSizeInput extends GetView<ProjectWizardController> {
                   style: GoogleFonts.inter(
                       fontSize: 11, color: Theme.of(context).colorScheme.primary));
             }),
+            // PK Fix 1: Marla standard selector (only when unit=marla AND country=PK)
+            Obx(() {
+              if (controller.plotUnit.value != 'marla' ||
+                  controller.selectedCountryCode.value != 'PK') {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Text('Marla Standard',
+                          style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context).colorScheme.onSurface)),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: () => _showMarlaInfoSheet(context),
+                        child: Icon(Icons.info_outline_rounded,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _MarlaStandardChip(
+                        label: 'Standard (272.25 sq ft)',
+                        value: 'standard',
+                        current: controller.marlaStandard.value,
+                        onTap: () => controller.marlaStandard.value = 'standard',
+                      ),
+                      const SizedBox(width: 8),
+                      _MarlaStandardChip(
+                        label: 'Old LDA (225 sq ft)',
+                        value: 'lda',
+                        current: controller.marlaStandard.value,
+                        onTap: () => controller.marlaStandard.value = 'lda',
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }),
             // Plot size inline error (Fix 12)
             Obx(() {
               final err = controller.plotSizeError.value;
@@ -572,6 +619,131 @@ class _LegendDot extends StatelessWidget {
 }
 
 // â”€â”€ Shared input decoration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// ── PK Fix 1: Marla info sheet ───────────────────────────────────────────────
+
+void _showMarlaInfoSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (_) => Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text('🔍 Marla Standards in Pakistan',
+              style: GoogleFonts.inter(
+                  fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 14),
+          _MarlaInfoRow(
+            emoji: '🏗️',
+            title: 'Standard Marla  =  272.25 sq ft',
+            subtitle:
+                'Used by DHA, Bahria Town, and all modern housing societies. '
+                'Also the national PEPCO standard. This is the default.',
+          ),
+          const SizedBox(height: 12),
+          _MarlaInfoRow(
+            emoji: '🏛️',
+            title: 'Old LDA Scheme  =  225 sq ft',
+            subtitle:
+                'Used in older Lahore Development Authority schemes '
+                '(Johar Town, Iqbal Town, Model Town extensions). '
+                'Select this only if your plot deed specifies this standard.',
+          ),
+          const SizedBox(height: 20),
+          Text(
+            '📌 When in doubt, check your Registry / ملکیت نامہ or ask your '
+            'patwari which standard applies.',
+            style: GoogleFonts.inter(
+                fontSize: 11,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _MarlaInfoRow extends StatelessWidget {
+  final String emoji, title, subtitle;
+  const _MarlaInfoRow(
+      {required this.emoji, required this.title, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 20)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: GoogleFonts.inter(
+                      fontSize: 13, fontWeight: FontWeight.w600,
+                      color: cs.onSurface)),
+              const SizedBox(height: 3),
+              Text(subtitle,
+                  style: GoogleFonts.inter(
+                      fontSize: 11, color: cs.onSurfaceVariant)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MarlaStandardChip extends StatelessWidget {
+  final String label, value, current;
+  final VoidCallback onTap;
+  const _MarlaStandardChip({
+    required this.label, required this.value,
+    required this.current, required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = current == value;
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? cs.primary : cs.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+              color: selected ? cs.primary : Theme.of(context).dividerColor),
+        ),
+        child: Text(label,
+            style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: selected ? Colors.white : cs.onSurface)),
+      ),
+    );
+  }
+}
+
+// ── Shared input decoration ───────────────────────────────────────────────────
 
 InputDecoration _inputDeco(BuildContext context, String hint) => InputDecoration(
       hintText: hint,

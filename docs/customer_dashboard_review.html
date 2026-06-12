@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Customer Dashboard Review — BuildOS</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm 16mm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+    color: #1e293b;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    margin: 0;
+  }
+  .cover {
+    text-align: center;
+    padding: 60px 20px 40px 20px;
+    page-break-after: always;
+  }
+  .cover .logo {
+    font-size: 13pt;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #2563eb;
+    text-transform: uppercase;
+    margin-bottom: 80px;
+  }
+  .cover h1 {
+    font-size: 28pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 12px 0;
+    line-height: 1.2;
+  }
+  .cover .subtitle {
+    font-size: 13pt;
+    color: #64748b;
+    margin-bottom: 50px;
+  }
+  .cover .score-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+    border-radius: 16px;
+    padding: 24px 48px;
+    margin-bottom: 50px;
+  }
+  .cover .score-badge .num { font-size: 34pt; font-weight: 800; }
+  .cover .score-badge .lbl { font-size: 10pt; opacity: 0.85; letter-spacing: 1px; text-transform: uppercase; }
+  .cover .meta {
+    font-size: 9.5pt;
+    color: #94a3b8;
+    line-height: 1.9;
+  }
+  h2 {
+    font-size: 16pt;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 3px solid #2563eb;
+    padding-bottom: 6px;
+    margin: 28px 0 14px 0;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #1e40af;
+    margin: 18px 0 8px 0;
+    page-break-after: avoid;
+  }
+  p { margin: 7px 0; }
+  ul { margin: 6px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px 0;
+    font-size: 9.5pt;
+    page-break-inside: auto;
+  }
+  th {
+    background: #1e40af;
+    color: #fff;
+    text-align: left;
+    padding: 7px 10px;
+    font-weight: 600;
+  }
+  td {
+    border: 1px solid #e2e8f0;
+    padding: 7px 10px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+  tr { page-break-inside: avoid; }
+  .tag {
+    display: inline-block;
+    font-size: 8pt;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .tag.keep    { background: #dcfce7; color: #166534; }
+  .tag.move    { background: #fef3c7; color: #92400e; }
+  .tag.remove  { background: #fee2e2; color: #991b1b; }
+  .callout {
+    border-left: 4px solid #2563eb;
+    background: #eff6ff;
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    page-break-inside: avoid;
+  }
+  .callout.warn { border-color: #f59e0b; background: #fffbeb; }
+  .callout.danger { border-color: #dc2626; background: #fef2f2; }
+  .callout .ttl { font-weight: 700; margin-bottom: 4px; }
+  .problem {
+    margin: 12px 0;
+    page-break-inside: avoid;
+  }
+  .problem .ptitle {
+    font-weight: 700;
+    color: #b91c1c;
+    font-size: 10.5pt;
+  }
+  .priority {
+    display: flex;
+    margin: 10px 0;
+    page-break-inside: avoid;
+  }
+  .priority .pnum {
+    flex: 0 0 36px;
+    height: 36px;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 50%;
+    font-weight: 800;
+    font-size: 13pt;
+    text-align: center;
+    line-height: 36px;
+    margin-right: 14px;
+  }
+  .priority .pbody .ptl { font-weight: 700; color: #0f172a; }
+  .pagebreak { page-break-before: always; }
+  .footer-note {
+    margin-top: 30px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 8.5pt;
+    color: #94a3b8;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════ COVER ════════════════ -->
+<div class="cover">
+  <div class="logo">BuildOS</div>
+  <h1>Customer Dashboard<br>Product &amp; UX Review</h1>
+  <div class="subtitle">Real Estate Budget &amp; Construction Tracking App</div>
+  <div class="score-badge">
+    <div class="num">5.8 / 10</div>
+    <div class="lbl">Overall Dashboard Score</div>
+  </div>
+  <div class="meta">
+    Review Type: Senior Product Manager · UX Designer · Real Estate Consultant · Construction PM · Investor Perspective<br>
+    Scope: Customer (Homeowner) Dashboard only<br>
+    Date: June 11, 2026
+  </div>
+</div>
+
+<!-- ════════════════ VERDICT ════════════════ -->
+<h2>Verdict at a Glance</h2>
+<p>The foundation is solid — the architecture is clean, the data models are rich, and the visual language (gradients, cards, progress bars) is modern. But the dashboard is currently built for <b>someone who deeply understands construction</b> — not for the typical Pakistani homeowner or investor who just wants to know if their house is on track and if their money is being spent wisely.</p>
+<div class="callout">
+  <div class="ttl">The core problem in one sentence</div>
+  The dashboard buries the most important thing (project status) behind the least important thing (market prices), and then repeats project data three times until it becomes meaningless.
+</div>
+
+<!-- ════════════════ WHAT WORKS WELL ════════════════ -->
+<h2>What Works Well</h2>
+<ul>
+  <li><b>Personalized greeting</b> with first name and time of day creates a warm, premium first impression.</li>
+  <li><b>Notification bell with unread badge</b> — standard, expected, and correctly placed.</li>
+  <li><b>Avatar → Profile navigation</b> is clean and intuitive.</li>
+  <li><b>Quick Action tiles</b> (4-up icon grid) — the best navigation pattern on the dashboard. Fast, scannable, touch-friendly.</li>
+  <li><b>Hero Project Card</b> (gradient, animated progress bar, stat pills) is visually the most impressive element. The count-up animation on completion % is premium polish.</li>
+  <li><b>Budget alert color coding</b> (warning amber / info blue) is meaningful and distinct.</li>
+  <li><b>Overdue task pill</b> next to the section header is a smart attention mechanism.</li>
+  <li><b>"View All →" links</b> throughout correctly defer detail to dedicated screens.</li>
+  <li><b>Market price disclaimer</b> ("Prices are indicative. Verify with local suppliers.") builds credibility.</li>
+  <li><b>Pull-to-refresh and retry-on-error</b> are production-quality resilience patterns.</li>
+  <li><b>Haptic feedback</b> on Quick Actions is a premium-feeling microinteraction.</li>
+</ul>
+
+<!-- ════════════════ MAJOR PROBLEMS ════════════════ -->
+<h2 class="pagebreak">Major Problems</h2>
+
+<div class="problem">
+  <div class="ptitle">1. Massive data duplication — the same projects appear three times</div>
+  <p>The Hero Project Card, the Portfolio Overview horizontal cards, and the bottom "My Projects" list all show the same projects with the same data (progress, budget, stage, weeks left) in one scroll. This is not hierarchy — it is redundancy filling roughly 60% of the dashboard.</p>
+</div>
+
+<div class="problem">
+  <div class="ptitle">2. The Quick Estimator is a tool, not a status widget</div>
+  <p>A calculator form (area input, floor selector, quality tier) is embedded as if it were a KPI card. The dashboard is a status surface, not a tool surface. Its collapsed state also duplicates the three material prices shown in the card directly above it.</p>
+</div>
+
+<div class="problem">
+  <div class="ptitle">3. Market Prices card is contractor-facing, not customer-facing</div>
+  <p>Daily steel/cement/sand/brick prices with up-down arrows are unactionable for a customer who is not buying materials, confusing without context, and anxiety-inducing (rising prices feel like bad news even under a fixed-price contract). It occupies the second-most-prominent position on the dashboard.</p>
+</div>
+
+<div class="problem">
+  <div class="ptitle">4. Portfolio Overview and Hero Card are redundant with each other</div>
+  <p>With 2+ active projects, both are visible and both show completion, spend, and budget for the same primary project. Only the consolidated summary (Total Budget / Total Spent) adds new information.</p>
+</div>
+
+<div class="problem">
+  <div class="ptitle">5. The bottom "My Projects" section adds zero new information</div>
+  <p>By the time a customer reaches it, every data point in it has already been seen twice.</p>
+</div>
+
+<div class="problem">
+  <div class="ptitle">6. Upcoming Tasks are contractor/PM tasks, not customer actions</div>
+  <p>"Upload foundation completion photos" and "Mark plaster stage complete" are contractor actions. Customers consume photos; they don't upload them. Showing a project-management task queue on the customer dashboard confuses roles. Customers need a simple "Action Required" concept instead.</p>
+</div>
+
+<div class="problem">
+  <div class="ptitle">7. The Arabic banner is a dead feature</div>
+  <p>"Switch to Arabic" taps into a "Coming Soon" snackbar. A call to action that delivers nothing erodes trust in the first ten seconds of using the app.</p>
+</div>
+
+<div class="problem">
+  <div class="ptitle">8. Duplicate "Financial Report" buttons</div>
+  <p>The "View Full Report →" text link and the "View Full Financial Report" outlined button, 50px apart, open the same modal.</p>
+</div>
+
+<div class="problem">
+  <div class="ptitle">9. Market Selector Pill belongs in Settings</div>
+  <p>Switching markets (Pakistan → UAE → Saudi) is a one-time configuration action. A customer in Lahore building a house will never switch markets, yet the pill permanently occupies header space.</p>
+</div>
+
+<div class="problem">
+  <div class="ptitle">10. The financial report modal is unexpectedly complex</div>
+  <p>An 88%-height sheet with a bar chart, 8px axis labels, and "PKR Lakh" notation that not all users understand. Powerful, but unreadable on a phone and unannounced.</p>
+</div>
+
+<div class="problem">
+  <div class="ptitle">11. Information density at scroll bottom causes fatigue</div>
+  <p>Tasks → Budget Insights → My Projects stack in immediate succession, each with full-width bordered cards, icons, and multi-line text. Users reaching this area have already processed six sections.</p>
+</div>
+
+<div class="problem">
+  <div class="ptitle">12. No single "health" signal</div>
+  <p>Despite abundant data, the dashboard never answers the customer's only real question: <b>"Is my project in good shape?"</b> No traffic light, no health score, no consolidated status — even though <code>healthScore</code> already exists in the data model.</p>
+</div>
+
+<!-- ════════════════ KEEP / MOVE / REMOVE ════════════════ -->
+<h2 class="pagebreak">Element-by-Element Classification</h2>
+
+<h3><span class="tag keep">Must Keep</span></h3>
+<table>
+  <tr><th style="width:42%">Element</th><th>Why</th></tr>
+  <tr><td>Header: greeting + name</td><td>Personal, warm, premium first impression</td></tr>
+  <tr><td>Notification bell with badge</td><td>Universal expectation; critical for alerts</td></tr>
+  <tr><td>Avatar → Profile tap</td><td>Standard pattern, correctly placed</td></tr>
+  <tr><td>Quick Action tiles (4-up grid)</td><td>Best navigation shortcut on the dashboard</td></tr>
+  <tr><td>Hero Project Card (gradient, animated progress, stat pills)</td><td>The single most valuable element — shows completion, time, and money at a glance</td></tr>
+  <tr><td>Budget alert cards ("Budget Insights")</td><td>Directly answers "Am I overspending?" — highest customer value</td></tr>
+  <tr><td>Overdue task count pill</td><td>At-a-glance urgency signal</td></tr>
+</table>
+
+<h3><span class="tag move">Move to Detailed Screens</span></h3>
+<table>
+  <tr><th style="width:42%">Element</th><th>Where it belongs</th></tr>
+  <tr><td>Quick Estimator (full card)</td><td>Calculator Hub — it is a tool, not a status</td></tr>
+  <tr><td>Market Prices card</td><td>Dedicated Material Prices screen or Calculator Hub</td></tr>
+  <tr><td>Portfolio horizontal scroll cards</td><td>My Projects screen</td></tr>
+  <tr><td>Full Financial Report modal (chart + table)</td><td>A dedicated Reports / Budget screen with its own route</td></tr>
+  <tr><td>"My Projects" bottom list</td><td>My Projects screen (already has a route)</td></tr>
+  <tr><td>Upcoming Tasks full cards</td><td>Project detail or a dedicated "My Actions" screen</td></tr>
+  <tr><td>Market Selector Pill</td><td>Settings / Profile screen</td></tr>
+  <tr><td>Per-project stage details inside cards</td><td>Project Stage Tracker screen</td></tr>
+</table>
+
+<h3><span class="tag remove">Remove Completely</span></h3>
+<table>
+  <tr><th style="width:42%">Element</th><th>Why</th></tr>
+  <tr><td>Arabic "Coming Soon" banner</td><td>Broken flow — promises, delivers nothing; damages trust</td></tr>
+  <tr><td>"View Full Financial Report" outlined button</td><td>Duplicate CTA — the text link above does the same thing</td></tr>
+  <tr><td>Mini price pills in Estimator collapsed state</td><td>Exact duplicate of the Market Prices card directly above</td></tr>
+  <tr><td>"My Projects" bottom section (from dashboard)</td><td>Third representation of the same projects; zero new information</td></tr>
+  <tr><td>Portfolio horizontal scroll cards (from dashboard)</td><td>Duplicates Hero Card + My Projects</td></tr>
+</table>
+
+<!-- ════════════════ MISSING FEATURES ════════════════ -->
+<h2 class="pagebreak">Missing High-Value Features</h2>
+<p>These are the things customers actually ask for first — and none of them are on this dashboard.</p>
+
+<table>
+  <tr><th style="width:34%">Missing Feature</th><th>Why It Matters</th></tr>
+  <tr><td><b>1. Latest site photo</b> (most critical)</td><td>The single most reassuring thing a customer can see is a recent photo with a timestamp ("Uploaded 2 hours ago"). Buildertrend and Procore make this the hero element. One photo does more for trust than every budget chart combined.</td></tr>
+  <tr><td><b>2. Timeline / milestone strip</b></td><td>Start → Foundation ✓ → Gray Structure ✓ → Plaster (NOW) → Finishing → Handover. Gives the customer a mental model of the journey. Currently absent.</td></tr>
+  <tr><td><b>3. Single project health indicator</b></td><td>Healthy / At Risk / Critical, derived from budget burn vs. completion. Answers "Is my project okay?" in one glance. <code>healthScore</code> already exists in the model but is never shown.</td></tr>
+  <tr><td><b>4. Next payment / financial event</b></td><td>"Next payment to contractor: PKR 8.5L on June 20." Construction in Pakistan follows milestone-based payments; cash-flow visibility is extremely valuable.</td></tr>
+  <tr><td><b>5. Last site activity timestamp</b></td><td>"Last update: yesterday 3:45 PM." If nothing has changed in 5 days, the customer needs to know. No freshness signal exists today.</td></tr>
+  <tr><td><b>6. Weather / work-day alert</b></td><td>"Monsoon warning — 3 days of rain expected in Lahore." Genuinely useful for construction; no competing Pakistani app does this well.</td></tr>
+  <tr><td><b>7. Worker count / site pulse</b></td><td>"12 workers on site today." Customers constantly worry whether workers actually show up. <code>workerCount</code> is tracked in the model but never surfaced.</td></tr>
+  <tr><td><b>8. Approval-pending alerts</b></td><td>"Architect drawing approval required." Administrative blockers stall construction; the customer needs a dedicated "Your Approval Needed" zone.</td></tr>
+</table>
+
+<!-- ════════════════ OVERLOAD ════════════════ -->
+<h2>Information Overload Analysis</h2>
+<p>The dashboard has <b>8 distinct scrollable sections</b> with roughly <b>25–30 data points and interactive elements</b> in a single scroll session. The specific causes of fatigue:</p>
+<ul>
+  <li><b>Three-tier project repetition.</b> Hero Card → Portfolio cards → My Projects list shows the same names, numbers, and progress bars three times. Each repetition teaches nothing new but demands processing.</li>
+  <li><b>Adjacent duplicate data.</b> Market Prices card and the Estimator's collapsed pills both show steel/cement/sand prices within 50px of each other.</li>
+  <li><b>Technical data without context.</b> "262/kg" for steel means nothing without a frame of reference ("↑8% this week — above average for June"). Without context, the number is noise.</li>
+  <li><b>Task overload.</b> Three full task cards, each with icon + title + priority badge + project + stage + due date. A dashboard should summarize ("3 tasks pending, 1 overdue") and drill through.</li>
+  <li><b>Competing gradient cards.</b> The Quick Estimator and the Hero Project Card use the identical gradient. When both are visible they fight for dominance and the eye cannot find the primary focus.</li>
+</ul>
+
+<!-- ════════════════ TRUST ════════════════ -->
+<h2 class="pagebreak">Trust &amp; Transparency Analysis</h2>
+
+<h3>What builds trust today</h3>
+<ul>
+  <li>The price disclaimer shows honesty about data quality.</li>
+  <li>Budget alerts show exact percentages, not vague warnings.</li>
+  <li>The Hero Card progress bar is visually convincing.</li>
+  <li>The notification badge implies the customer is being kept informed.</li>
+</ul>
+
+<h3>What erodes trust today</h3>
+<ul>
+  <li><b>Arabic banner → "Coming Soon".</b> A broken promise in the first 10 seconds raises the question: what else on this dashboard is aspirational rather than real?</li>
+  <li><b>No photos.</b> Budgets and percentages with no visual proof of work invite skepticism about the numbers themselves.</li>
+  <li><b>No "last updated" on projects.</b> "45% complete" updated yesterday vs. three weeks ago are very different trust signals — and the customer can't tell which one they're looking at.</li>
+  <li><b>No source attribution on prices.</b> "Who says steel is 262/kg?" has no answer. "Based on Lahore open-market averages" would fix it.</li>
+  <li><b>The health score is computed but invisible.</b> The most trustworthy single number for a customer exists in the model and is never surfaced.</li>
+</ul>
+
+<!-- ════════════════ MOBILE ════════════════ -->
+<h2>Mobile Experience Review</h2>
+<ul>
+  <li><b>Extreme scroll depth.</b> Reaching the bottom section takes 8–10 full swipes on a 6" phone, through six other sections first.</li>
+  <li><b>Hidden horizontal scroll.</b> The Portfolio card list has no scroll indicator and no peek of the next card — users won't know more cards exist.</li>
+  <li><b>Keyboard pushes the estimate off-screen.</b> Tapping the Area input in the expanded Estimator opens a keyboard that hides the result below it — a classic mobile form anti-pattern.</li>
+  <li><b>9px fonts</b> (price units, change labels, chart axis labels) are below the 11px mobile minimum — a real problem on the lower-DPI handsets common in Pakistan's mid-range market.</li>
+  <li><b>Tiny touch targets.</b> "View Full Report →" and similar text links wrapped in bare GestureDetectors with no minimum hit area will produce missed taps.</li>
+  <li><b>The chart modal's 8–9px axis labels</b> are nearly unreadable on a phone without zooming.</li>
+  <li><b>No end-of-page signal.</b> Continuous card stacking makes the dashboard feel like infinite content rather than a bounded summary.</li>
+</ul>
+
+<!-- ════════════════ EXEC SUMMARY ════════════════ -->
+<h2 class="pagebreak">Executive Summary — The 30-Second Test</h2>
+
+<div class="callout warn">
+  <div class="ttl">What a customer experiences today</div>
+  They see their name and a greeting. Then a market selector they don't need. Then four action buttons (good). Then material prices they can't act on. Then a calculator they didn't come to use. They scroll past it and finally reach the Hero Card: 45% complete, 12 weeks left, PKR 62L spent — <i>this is what they came for</i>. Then they keep scrolling and see the same project data two more times before reaching a task list full of contractor-level items.
+</div>
+
+<div class="callout">
+  <div class="ttl">What they should experience in 30 seconds</div>
+  One clear headline: their project is <b>on track / at risk / behind</b>. A recent site photo proving work is happening. The completion percentage and weeks left. One urgent action, if any. A quick path deeper if they want it.
+</div>
+
+<!-- ════════════════ RECOMMENDATIONS ════════════════ -->
+<h2>Final Recommendations (Highest Impact First)</h2>
+
+<div class="priority"><div class="pnum">1</div><div class="pbody">
+  <div class="ptl">Eliminate the three-layer project duplication</div>
+  Remove the bottom "My Projects" section and the Portfolio horizontal cards from the dashboard. Keep only the Hero Card plus the consolidated Total Budget / Total Spent summary. The My Projects screen already handles the full list.
+</div></div>
+
+<div class="priority"><div class="pnum">2</div><div class="pbody">
+  <div class="ptl">Move the Quick Estimator off the dashboard</div>
+  Replace the full gradient card with a single-line CTA ("Estimate Construction Cost →") linking to the Calculator Hub. This frees the second most prominent dashboard position.
+</div></div>
+
+<div class="priority"><div class="pnum">3</div><div class="pbody">
+  <div class="ptl">Add a site photo strip as the hero element</div>
+  A "Latest Site Updates" row — even 2–3 thumbnails with timestamps — directly below Quick Actions. The single highest trust-building change on this list.
+</div></div>
+
+<div class="priority"><div class="pnum">4</div><div class="pbody">
+  <div class="ptl">Replace Market Prices with a Project Health card</div>
+  A green/amber/red status dot, the existing <code>healthScore</code>, and a one-line narrative ("2 weeks ahead of schedule — budget on track"). Answers "Is everything okay?" in 3 seconds.
+</div></div>
+
+<div class="priority"><div class="pnum">5</div><div class="pbody">
+  <div class="ptl">Compress Upcoming Tasks into an "Action Required" row</div>
+  Replace three full task cards with one compact row: "3 pending actions · 1 overdue" with a chevron to the full list.
+</div></div>
+
+<div class="priority"><div class="pnum">6</div><div class="pbody">
+  <div class="ptl">Surface healthScore and workerCount</div>
+  Both already exist in <code>ProjectModel</code> and are never shown. "14 workers active today" is a powerful reassurance signal.
+</div></div>
+
+<div class="priority"><div class="pnum">7</div><div class="pbody">
+  <div class="ptl">Remove the Arabic "Coming Soon" banner</div>
+  A one-line removal that immediately improves trust. Reintroduce only when Arabic RTL ships.
+</div></div>
+
+<div class="priority"><div class="pnum">8</div><div class="pbody">
+  <div class="ptl">Add a "Last Updated" freshness signal to the Hero Card</div>
+  <code>project.lastUpdated</code> is already in the model. "Last updated: yesterday 4:30 PM" answers "is this data current?"
+</div></div>
+
+<div class="priority"><div class="pnum">9</div><div class="pbody">
+  <div class="ptl">Move the Market Selector to Settings/Profile</div>
+  The header becomes clean: greeting + bell + avatar only.
+</div></div>
+
+<div class="priority"><div class="pnum">10</div><div class="pbody">
+  <div class="ptl">Add a "Next Milestone / Next Payment" card</div>
+  "Next milestone: Roof Slab — est. July 15" or "Next payment: PKR 8.5L on gray-structure completion." High value for customers managing PKR 1–5 Crore projects; no competing Pakistani app does this well.
+</div></div>
+
+<div class="footer-note">
+  BuildOS — Customer Dashboard Product &amp; UX Review · June 11, 2026 · Scope: Customer dashboard only (Developer, Contractor, and Admin dashboards excluded)
+</div>
+
+</body>
+</html>

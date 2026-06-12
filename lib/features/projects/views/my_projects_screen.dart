@@ -63,7 +63,8 @@ class MyProjectsScreen extends GetView<ProjectsController> {
                         contentPadding: EdgeInsets.zero,
                         isDense: true,
                       ),
-                      onChanged: (v) => controller.searchQuery.value = v,
+                      // Fix 2: route through the debounced setter
+                      onChanged: controller.setSearchQuery,
                     ),
                   ),
                 ],
@@ -144,23 +145,75 @@ class MyProjectsScreen extends GetView<ProjectsController> {
                 );
               }
 
-              // ── Populated list ────────────────────────────────────────────
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.pagePaddingH,
-                  vertical: AppDimensions.sm,
-                ),
-                itemCount: list.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(height: AppDimensions.md),
-                itemBuilder: (_, i) => _ProjectCard(project: list[i]),
-              );
-            }),
+              // ── Paginated list (Fix 1) ────────────────────────────────────
+              // NotificationListener detects scroll-to-bottom without needing
+              // a ScrollController, keeping MyProjectsScreen a StatelessWidget.
+              return NotificationListener<ScrollUpdateNotification>(
+                onNotification: (note) {
+                  final metrics = note.metrics;
+                  if (metrics.pixels >= metrics.maxScrollExtent - 200) {
+                    controller.loadNextPage();
+                  }
+                  return false; // let the notification bubble
+                },
+                child: Obx(() {
+                final loadingMore = controller.isLoadingMore.value;
+                final more        = controller.hasMore.value;
+                // +1 for the footer row (spinner or end-of-list)
+                final itemCount   = list.length + 1;
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.pagePaddingH,
+                    vertical: AppDimensions.sm,
+                  ),
+                  itemCount: itemCount,
+                  itemBuilder: (_, i) {
+                    // Footer: spinner while loading, or nothing when done
+                    if (i == list.length) {
+                      if (loadingMore) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: SizedBox(
+                              width: 24, height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        );
+                      }
+                      if (!more && list.isNotEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: Text(
+                              'All ${list.length} projects loaded',
+                              style: AppTextStyles.caption(context),
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }
+                    // Card
+                    final project = list[i];
+                    return Padding(
+                      padding: i < list.length - 1
+                          ? const EdgeInsets.only(bottom: AppDimensions.md)
+                          : EdgeInsets.zero,
+                      child: _ProjectCard(project: project),
+                    );
+                  },
+                );
+              }),    // Obx
+              );    // NotificationListener
+            }),     // outer Obx
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.toNamed(AppRoutes.newProjectWizard),
+        tooltip: 'Add new project',
         child: const Icon(Icons.add_rounded),
       ),
     );

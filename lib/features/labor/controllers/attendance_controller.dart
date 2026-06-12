@@ -123,6 +123,36 @@ class AttendanceController extends GetxController {
     _attendance.refresh();
   }
 
+  // ── F4: Bulk attendance actions ───────────────────────────────────────────
+
+  /// Marks every active worker as Present for today.
+  void markAllPresent() {
+    final today = DateTime.now();
+    for (final labor in laborList) {
+      _updateRecord(
+        labor.id, today,
+        getRecord(labor.id, today).copyWith(
+          status: AttendanceStatus.present,
+          overtimeHours: 0,
+        ),
+      );
+    }
+  }
+
+  /// Marks every active worker as Absent for today.
+  void markAllAbsent() {
+    final today = DateTime.now();
+    for (final labor in laborList) {
+      _updateRecord(
+        labor.id, today,
+        getRecord(labor.id, today).copyWith(
+          status: AttendanceStatus.absent,
+          overtimeHours: 0,
+        ),
+      );
+    }
+  }
+
   // ── Summary stats ─────────────────────────────────────────────────────────
 
   int get totalWorkers => laborList.length;

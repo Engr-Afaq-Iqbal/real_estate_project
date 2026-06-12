@@ -129,13 +129,17 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                     }),
                     Positioned(
                       right: 0, bottom: 0,
-                      child: Container(
-                        width: 28, height: 28,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                            color: cs.primary, shape: BoxShape.circle),
-                        child: const Icon(Icons.camera_alt_outlined,
-                            size: 14, color: Colors.white),
+                      child: Semantics(
+                        label: 'Change profile photo',
+                        button: true,
+                        child: Container(
+                          width: 28, height: 28,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                              color: cs.primary, shape: BoxShape.circle),
+                          child: const Icon(Icons.camera_alt_outlined,
+                              size: 14, color: Colors.white),
+                        ),
                       ),
                     ),
                   ],

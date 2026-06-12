@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../features/shell/controllers/shell_controller.dart';
@@ -12,9 +13,9 @@ class AppBottomNavBar extends GetView<ShellController> {
   const AppBottomNavBar({super.key});
 
   static const _tabs = [
-    (Icons.home_outlined,           Icons.home_rounded,           'Home'),
-    (Icons.folder_open_outlined,    Icons.folder_rounded,         'Projects'),
-    (Icons.settings_outlined,       Icons.settings_rounded,       'Settings'),
+    (Icons.home_outlined,        Icons.home_rounded,       'Home'),
+    (Icons.folder_open_outlined, Icons.folder_rounded,     'Projects'),
+    (Icons.settings_outlined,    Icons.settings_rounded,   'Settings'),
   ];
 
   @override
@@ -71,50 +72,64 @@ class _NavItem extends StatelessWidget {
     final isActive = currentIndex == index;
 
     return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                transitionBuilder: (child, anim) => ScaleTransition(
-                  scale: Tween<double>(begin: 0.75, end: 1.0).animate(
-                    CurvedAnimation(parent: anim, curve: Curves.easeOutBack)),
-                  child: child,
-                ),
-                child: Icon(
-                  isActive ? activeIcon : icon,
-                  key: ValueKey(isActive),
-                  size: 24,
-                  color: isActive ? _kActive : _kInactive,
-                ),
+      // Fix 1: Semantics so screen readers announce tab name and selected state
+      child: Semantics(
+        label: label,
+        button: true,
+        selected: isActive,
+        child: GestureDetector(
+          onTap: () {
+            HapticFeedback.lightImpact(); // POLISH 4
+            onTap();
+          },
+          behavior: HitTestBehavior.opaque,
+          // ExcludeSemantics: icon + text are announced via parent Semantics
+          child: ExcludeSemantics(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    transitionBuilder: (child, anim) => ScaleTransition(
+                      scale: Tween<double>(begin: 0.75, end: 1.0).animate(
+                          CurvedAnimation(
+                              parent: anim, curve: Curves.easeOutBack)),
+                      child: child,
+                    ),
+                    child: Icon(
+                      isActive ? activeIcon : icon,
+                      key: ValueKey(isActive),
+                      size: 24,
+                      color: isActive ? _kActive : _kInactive,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 200),
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight:
+                          isActive ? FontWeight.w600 : FontWeight.w400,
+                      color: isActive ? _kActive : _kInactive,
+                    ),
+                    child: Text(label),
+                  ),
+                  const SizedBox(height: 4),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: isActive ? 16 : 0,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: isActive ? _kActive : Colors.transparent,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                  color: isActive ? _kActive : _kInactive,
-                ),
-                child: Text(label),
-              ),
-              const SizedBox(height: 4),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: isActive ? 16 : 0,
-                height: 3,
-                decoration: BoxDecoration(
-                  color: isActive ? _kActive : Colors.transparent,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

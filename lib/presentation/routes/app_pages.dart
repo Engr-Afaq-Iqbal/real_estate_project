@@ -5,6 +5,7 @@ import 'app_routes.dart';
 import '../../features/onboarding/bindings/onboarding_binding.dart';
 import '../../features/onboarding/views/splash_screen.dart';
 import '../../features/onboarding/views/role_selection_screen.dart';
+import '../../features/onboarding/views/onboarding_screen.dart';
 
 // Auth
 import '../../features/auth/bindings/auth_binding.dart';
@@ -26,6 +27,7 @@ import '../../features/projects/views/new_project_wizard_screen.dart';
 import '../../features/projects/views/project_stage_tracker_screen.dart';
 import '../../features/projects/views/stage_detail_screen.dart';
 import '../../features/projects/views/project_handover_screen.dart';
+import '../../features/projects/views/project_report_screen.dart';
 
 // Updates
 import '../../features/updates/bindings/updates_binding.dart';
@@ -48,12 +50,24 @@ import '../../features/labor/views/payroll_screen.dart';
 
 // Calculator
 import '../../features/calculator/bindings/calculator_binding.dart';
-import '../../features/calculator/views/calculator_hub_screen.dart';
+// Deprecated for current release — Cost Calculator hub moved to the Home
+// Dashboard estimator section. Preserved for future reactivation.
+// import '../../features/calculator/views/calculator_hub_screen.dart';
 import '../../features/calculator/views/calculator_form_screen.dart';
 import '../../features/calculator/views/saved_calculations_screen.dart';
 import '../../features/calculator/views/material_calculator_screen.dart';
-import '../../features/calculator/views/house_estimator_screen.dart';
+// Feature temporarily disabled. Full Estimate screen preserved for future
+// implementation.
+// import '../../features/calculator/views/house_estimator_screen.dart';
 import '../../features/calculator/views/what_if_screen.dart';
+import '../../features/calculator/views/area_based_estimator_screen.dart';
+import '../../features/calculator/views/material_cost_calculator_screen.dart';
+import '../../features/calculator/views/floor_plan_estimator_screen.dart';
+import '../../features/market/views/market_prices_screen.dart';
+
+// Tasks
+import '../../features/tasks/bindings/tasks_binding.dart';
+import '../../features/tasks/views/tasks_screen.dart';
 
 // Documents
 import '../../features/documents/bindings/documents_binding.dart';
@@ -78,6 +92,12 @@ class AppPages {
     GetPage(
       name: AppRoutes.splash,
       page: () => const SplashScreen(),
+      binding: OnboardingBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.onboarding,
+      page: () => const OnboardingScreen(),
       binding: OnboardingBinding(),
       transition: Transition.fadeIn,
     ),
@@ -149,6 +169,12 @@ class AppPages {
       binding: ProjectsBinding(),
       transition: Transition.rightToLeft,
     ),
+    GetPage(
+      name: AppRoutes.projectReport,
+      page: () => const ProjectReportScreen(),
+      binding: ProjectsBinding(),
+      transition: Transition.rightToLeft,
+    ),
 
     // ── Updates ─────────────────────────────────────────────────────────────
     GetPage(
@@ -201,24 +227,29 @@ class AppPages {
     ),
 
     // ── Calculator ──────────────────────────────────────────────────────────
-    GetPage(
-      name: AppRoutes.calculatorHub,
-      page: () => const CalculatorHubScreen(),
-      binding: CalculatorBinding(),
-      transition: Transition.rightToLeft,
-    ),
+    // Deprecated for current release. Cost Calculator functionality has been
+    // moved to the Home Dashboard estimator section (DashboardEstimatorWidget).
+    // Preserve this route for future enhancements and possible reactivation.
+    // GetPage(
+    //   name: AppRoutes.calculatorHub,
+    //   page: () => const CalculatorHubScreen(),
+    //   binding: CalculatorBinding(),
+    //   transition: Transition.rightToLeft,
+    // ),
     GetPage(
       name: AppRoutes.materialCalculator,
       page: () => const MaterialCalculatorScreen(),
       binding: CalculatorBinding(),
       transition: Transition.rightToLeft,
     ),
-    GetPage(
-      name: AppRoutes.houseEstimator,
-      page: () => const HouseEstimatorScreen(),
-      binding: CalculatorBinding(),
-      transition: Transition.rightToLeft,
-    ),
+    // Feature temporarily disabled. Full Estimate screen preserved for
+    // future implementation.
+    // GetPage(
+    //   name: AppRoutes.houseEstimator,
+    //   page: () => const HouseEstimatorScreen(),
+    //   binding: CalculatorBinding(),
+    //   transition: Transition.rightToLeft,
+    // ),
     GetPage(
       name: AppRoutes.whatIfCalculator,
       page: () => const WhatIfScreen(),
@@ -235,6 +266,36 @@ class AppPages {
       name: AppRoutes.savedCalculations,
       page: () => const SavedCalculationsScreen(),
       binding: CalculatorBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.areaEstimator,
+      page: () => const AreaBasedEstimatorScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.materialCostCalc,
+      page: () => const MaterialCostCalculatorScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.floorPlanEstimator,
+      page: () => const FloorPlanEstimatorScreen(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // ── Market ──────────────────────────────────────────────────────────────
+    GetPage(
+      name: AppRoutes.marketPrices,
+      page: () => const MarketPricesScreen(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // ── Tasks ───────────────────────────────────────────────────────────────
+    GetPage(
+      name: AppRoutes.tasks,
+      page: () => const TasksScreen(),
+      binding: TasksBinding(),
       transition: Transition.rightToLeft,
     ),
 

@@ -4,12 +4,30 @@ import '../data/models/project_model.dart';
 import '../data/models/stage_model.dart';
 
 class ProjectsController extends GetxController {
-  final isLoading    = false.obs;
-  final hasLoadError = false.obs;
+  // ── Load state ────────────────────────────────────────────────────────────
+  final isLoading      = false.obs;
+  final hasLoadError   = false.obs;
+  final isLoadingMore  = false.obs;    // Fix 1: next-page spinner
+  final hasMore        = true.obs;     // Fix 1: whether more pages exist
+
+  // Full data from "server"
+  final _allProjects = <ProjectModel>[];
+
+  // What the screen renders (grows as pages load)
   final projects     = <ProjectModel>[].obs;
+
+  static const int _pageSize = 10;
+  int _loadedCount = 0;
+
+  // ── Selection / filter ────────────────────────────────────────────────────
   final selectedProject = Rxn<ProjectModel>();
   final selectedFilter  = 'active'.obs;
+
+  // Fix 2: debounce — the raw input is stored here immediately
+  final _rawSearchQuery = ''.obs;
+  // The debounced value drives filteredProjects
   final searchQuery     = ''.obs;
+  Timer? _searchDebounce;
 
   // Last synced timestamp + display label
   final _lastSyncedAt = Rxn<DateTime>();
@@ -21,13 +39,37 @@ class ProjectsController extends GetxController {
   // Stage status overrides (stageId → 'notStarted'|'inProgress'|'completed')
   final stageStatusMap   = <String, String>{}.obs;
 
-  // New project wizard
-  final wizardStep         = 0.obs;
+  // F1: Payment milestone status per stage (stageId → 'pending'|'released')
+  final paymentStatusMap = <String, String>{}.obs;
+
+  String paymentStatus(String stageId) =>
+      paymentStatusMap[stageId] ?? 'pending';
+  bool isPaymentReleased(String stageId) =>
+      paymentStatusMap[stageId] == 'released';
+  void releaseStagePayment(String stageId) {
+    paymentStatusMap[stageId] = 'released';
+    paymentStatusMap.refresh();
+  }
+
+  double totalReleasedPayment(List<dynamic> stages, double totalBudget) {
+    if (stages.isEmpty) return 0;
+    double released = 0;
+    for (int i = 0; i < stages.length; i++) {
+      final s = stages[i];
+      if (isPaymentReleased(s.id as String)) {
+        released += totalBudget / stages.length;
+      }
+    }
+    return released;
+  }
+
+  // Wizard helpers
+  final wizardStep          = 0.obs;
   final selectedProjectType = 'House'.obs;
-  final projectName        = ''.obs;
-  final projectCity        = 'Lahore'.obs;
-  final projectArea        = ''.obs;
-  final projectPlotSize    = ''.obs;
+  final projectName         = ''.obs;
+  final projectCity         = 'Lahore'.obs;
+  final projectArea         = ''.obs;
+  final projectPlotSize     = ''.obs;
 
   @override
   void onInit() {
@@ -36,26 +78,43 @@ class ProjectsController extends GetxController {
     if (Get.arguments is ProjectModel) {
       selectedProject.value = Get.arguments as ProjectModel;
     }
-    // Update sync label every minute
-    _syncTimer = Timer.periodic(const Duration(minutes: 1), (_) => _refreshSyncLabel());
+    _syncTimer = Timer.periodic(
+        const Duration(minutes: 1), (_) => _refreshSyncLabel());
   }
 
   @override
   void onClose() {
     _syncTimer?.cancel();
+    _searchDebounce?.cancel();
     super.onClose();
   }
 
-  // ── Load ──────────────────────────────────────────────────────────────────
+  // ── Fix 2: Debounced search ───────────────────────────────────────────────
+
+  /// Call this from onChanged. Updates the display immediately so the user
+  /// sees their text, but only triggers the filter after 300 ms of silence.
+  void setSearchQuery(String value) {
+    _rawSearchQuery.value = value;
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      searchQuery.value = value;
+    });
+  }
+
+  // ── Fix 1: Load + paginate ────────────────────────────────────────────────
 
   Future<void> loadProjects() async {
     isLoading.value    = true;
     hasLoadError.value = false;
+    _loadedCount = 0;
     try {
       await Future.delayed(const Duration(milliseconds: 1500));
-      projects.value = ProjectModel.mockList();
+      _allProjects
+        ..clear()
+        ..addAll(ProjectModel.mockList());
       _lastSyncedAt.value = DateTime.now();
       _refreshSyncLabel();
+      _appendPage();
     } catch (_) {
       hasLoadError.value = true;
     } finally {
@@ -63,18 +122,24 @@ class ProjectsController extends GetxController {
     }
   }
 
-  void _refreshSyncLabel() {
-    final t = _lastSyncedAt.value;
-    if (t == null) { syncLabel.value = 'Not synced yet'; return; }
-    final diff = DateTime.now().difference(t);
-    if (diff.inSeconds < 60) {
-      syncLabel.value = 'Last synced just now';
-    } else if (diff.inMinutes < 60) {
-      final m = diff.inMinutes;
-      syncLabel.value = 'Last synced ${m}m ago';
-    } else {
-      syncLabel.value = 'Last synced ${diff.inHours}h ago';
+  /// Loads the next page of 10 projects. Called by the scroll listener.
+  Future<void> loadNextPage() async {
+    if (isLoadingMore.value || !hasMore.value) return;
+    isLoadingMore.value = true;
+    await Future.delayed(const Duration(milliseconds: 500)); // simulate network
+    _appendPage();
+    isLoadingMore.value = false;
+  }
+
+  void _appendPage() {
+    final end = (_loadedCount + _pageSize).clamp(0, _allProjects.length);
+    if (_loadedCount >= _allProjects.length) {
+      hasMore.value = false;
+      return;
     }
+    projects.addAll(_allProjects.sublist(_loadedCount, end));
+    _loadedCount = end;
+    hasMore.value = _loadedCount < _allProjects.length;
   }
 
   // ── Filtered list ──────────────────────────────────────────────────────────
@@ -103,7 +168,22 @@ class ProjectsController extends GetxController {
     selectedProject.refresh();
   }
 
-  // ── Stage progress management ──────────────────────────────────────────────
+  // ── Sync label ────────────────────────────────────────────────────────────
+
+  void _refreshSyncLabel() {
+    final t = _lastSyncedAt.value;
+    if (t == null) { syncLabel.value = 'Not synced yet'; return; }
+    final diff = DateTime.now().difference(t);
+    if (diff.inSeconds < 60) {
+      syncLabel.value = 'Last synced just now';
+    } else if (diff.inMinutes < 60) {
+      syncLabel.value = 'Last synced ${diff.inMinutes}m ago';
+    } else {
+      syncLabel.value = 'Last synced ${diff.inHours}h ago';
+    }
+  }
+
+  // ── Stage progress management ─────────────────────────────────────────────
 
   double stageProgress(String stageId, double defaultProgress) =>
       stageProgressMap[stageId] ?? defaultProgress;
@@ -120,11 +200,9 @@ class ProjectsController extends GetxController {
     if (pct >= 100) {
       stageStatusMap[stageId] = 'completed';
       stageStatusMap.refresh();
-    } else if (pct > 0) {
-      if (stageStatusMap[stageId] != 'inProgress') {
-        stageStatusMap[stageId] = 'inProgress';
-        stageStatusMap.refresh();
-      }
+    } else if (pct > 0 && stageStatusMap[stageId] != 'inProgress') {
+      stageStatusMap[stageId] = 'inProgress';
+      stageStatusMap.refresh();
     }
   }
 
@@ -146,7 +224,6 @@ class ProjectsController extends GetxController {
     }
   }
 
-  /// Overall completion of selected project (0–100) considering overrides.
   double get overallProgress {
     final project = selectedProject.value;
     if (project == null) return 0;

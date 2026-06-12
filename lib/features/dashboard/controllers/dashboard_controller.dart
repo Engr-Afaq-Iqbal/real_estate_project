@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../../projects/data/models/project_model.dart';
+import '../../market/controllers/market_controller.dart';
 
 // ── Market price model ────────────────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ class DashboardController extends GetxController {
     try {
       await Future.delayed(const Duration(milliseconds: 600));
       projects.value              = ProjectModel.mockList();
-      marketPrices.value          = _mockMarketPrices();
+      marketPrices.value          = _marketAwarePrices();
       marketPricesLastUpdated.value = DateTime.now();
       upcomingTasks.value         = _mockUpcomingTasks();
       budgetAlerts.value          = _mockBudgetAlerts();
@@ -110,7 +111,7 @@ class DashboardController extends GetxController {
     if (isRefreshingPrices.value) return;
     isRefreshingPrices.value = true;
     await Future.delayed(const Duration(milliseconds: 900));
-    marketPrices.value = _mockMarketPrices();
+    marketPrices.value = _marketAwarePrices();
     marketPricesLastUpdated.value = DateTime.now();
     isRefreshingPrices.value = false;
   }
@@ -129,17 +130,48 @@ class DashboardController extends GetxController {
   void runQuickEstimate(String area) {
     final val = double.tryParse(area.trim());
     if (val == null || val <= 0) { quickEstimate.value = null; return; }
-    // Simple estimate: val (Marla) × 272.25 sqft × 2200 PKR/sqft (standard)
-    final sqft   = val * 272.25;
     final floors = calcFloors.value;
-    const rateMap = {'economy': 1600.0, 'standard': 2200.0, 'premium': 3400.0, 'luxury': 5800.0};
-    final rate = rateMap[calcQuality.value] ?? 2200.0;
-    quickEstimate.value = sqft * floors * rate * 1.1; // +10% contingency
+    // Use market-aware rate if MarketController is registered
+    double rate;
+    if (Get.isRegistered<MarketController>()) {
+      rate = Get.find<MarketController>().estimateRate(calcQuality.value);
+    } else {
+      // Fallback Pakistan rates (per Marla)
+      const rateMap = {'economy': 43200.0, 'standard': 60700.0, 'premium': 93600.0, 'luxury': 156800.0};
+      rate = rateMap[calcQuality.value] ?? 60700.0;
+    }
+    quickEstimate.value = val * floors * rate * 1.1; // +10% contingency
+  }
+
+  /// Called by MarketController when the market changes.
+  void notifyMarketChange() {
+    marketPrices.value = _marketAwarePrices();
+    marketPricesLastUpdated.value = DateTime.now();
+    // Re-run any cached estimate
+    calcAreaCtrl.value = calcAreaCtrl.value; // trigger rebuild
+    quickEstimate.value = null;
   }
 
   // ── Mock data ──────────────────────────────────────────────────────────────
 
-  static List<MarketPrice> _mockMarketPrices() => [
+  /// Returns market prices for the currently selected market.
+  List<MarketPrice> _marketAwarePrices() {
+    if (!Get.isRegistered<MarketController>()) return _pkMarketPrices();
+    final m = Get.find<MarketController>().market;
+    return m.materials
+        .take(4)
+        .map((mat) => MarketPrice(
+              material: mat.name,
+              materialUr: mat.name, // Urdu translation N/A for non-PK
+              price: mat.price,
+              unit: mat.unit,
+              changeToday: mat.changeToday,
+              currency: m.currency,
+            ))
+        .toList();
+  }
+
+  static List<MarketPrice> _pkMarketPrices() => [
         const MarketPrice(
           material: 'Steel', materialUr: 'سریا',
           price: 262, unit: '/kg', changeToday: 4,

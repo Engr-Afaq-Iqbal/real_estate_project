@@ -191,7 +191,12 @@ class _CompanyCodeSection extends GetView<ProjectWizardController> {
                   style: GoogleFonts.inter(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 12),
-                if (!controller.companyRequestSent.value) ...[
+                // POLISH 5: Verified company display
+                if (controller.companyVerified.value) ...[
+                  _VerifiedCompanyCard(),
+                  const SizedBox(height: 12),
+                ],
+                if (!controller.companyRequestSent.value && !controller.companyVerified.value) ...[
                   Row(
                     children: [
                       Expanded(
@@ -242,7 +247,7 @@ class _CompanyCodeSection extends GetView<ProjectWizardController> {
                       ),
                     ],
                   ),
-                ] else ...[
+                ] else if (!controller.companyVerified.value) ...[
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 8),
@@ -256,7 +261,7 @@ class _CompanyCodeSection extends GetView<ProjectWizardController> {
                         const Icon(Icons.check_circle_rounded,
                             color: Color(0xFF16A34A), size: 16),
                         const SizedBox(width: 6),
-                        Text('Request Sent â€” Awaiting Approval',
+                        Text('Request Sent — Awaiting Approval',
                             style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -339,5 +344,333 @@ class _InfoNote extends StatelessWidget {
   }
 }
 
+// ── POLISH 5: Verified company card ──────────────────────────────────────────
 
+class _VerifiedCompanyCard extends GetView<ProjectWizardController> {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: () => _showCompanyProfile(context),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1D4ED8).withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+              color: const Color(0xFF1D4ED8).withValues(alpha: 0.25)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44, height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1D4ED8).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Center(
+                      child: Text('🏗️', style: TextStyle(fontSize: 22))),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Malik Construction Co.',
+                              style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: cs.onSurface),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1D4ED8),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.verified_rounded,
+                                    size: 11, color: Colors.white),
+                                const SizedBox(width: 3),
+                                Text('Verified',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          ...List.generate(5, (i) => Icon(
+                                i < 4 ? Icons.star_rounded : Icons.star_half_rounded,
+                                size: 13,
+                                color: const Color(0xFFF59E0B),
+                              )),
+                          const SizedBox(width: 4),
+                          Text('4.2',
+                              style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: cs.onSurface)),
+                          Text(' (38 reviews)',
+                              style: GoogleFonts.inter(
+                                  fontSize: 10, color: cs.onSurfaceVariant)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text('Specializes in residential & commercial construction',
+                style: GoogleFonts.inter(
+                    fontSize: 11, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 8),
+            Text('View Company Profile →',
+                style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1D4ED8))),
+          ],
+        ),
+      ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.05, end: 0),
+    );
+  }
 
+  void _showCompanyProfile(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.75,
+        maxChildSize: 0.9,
+        builder: (_, scroll) => SingleChildScrollView(
+          controller: scroll,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Container(
+                    width: 36, height: 4,
+                    decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      width: 60, height: 60,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1D4ED8).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Center(
+                          child: Text('🏗️', style: TextStyle(fontSize: 30))),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text('Malik Construction Co.',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: cs.onSurface)),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1D4ED8),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.verified_rounded,
+                                        size: 12, color: Colors.white),
+                                    const SizedBox(width: 4),
+                                    Text('Verified Company',
+                                        style: GoogleFonts.inter(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              ...List.generate(5, (i) => Icon(
+                                    i < 4 ? Icons.star_rounded : Icons.star_half_rounded,
+                                    size: 14,
+                                    color: const Color(0xFFF59E0B),
+                                  )),
+                              const SizedBox(width: 5),
+                              Text('4.2  ·  38 reviews',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 11, color: cs.onSurfaceVariant)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _ProfileStat(label: 'Years in Business', value: '12 years'),
+                _ProfileStat(label: 'Completed Projects', value: '87 projects'),
+                _ProfileStat(label: 'Active Projects',   value: '6 projects'),
+                _ProfileStat(label: 'Team Size',         value: '45 workers'),
+                _ProfileStat(label: 'License No.',       value: 'PEC/2012/LHR-0499'),
+                const SizedBox(height: 16),
+                Text('Specializations',
+                    style: GoogleFonts.inter(
+                        fontSize: 13, fontWeight: FontWeight.w600,
+                        color: cs.onSurface)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8, runSpacing: 6,
+                  children: [
+                    'Residential Construction',
+                    'Commercial Buildings',
+                    'Gray Structure',
+                    'Interior Finishing',
+                    'Renovation',
+                  ].map((s) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1D4ED8).withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                              color: const Color(0xFF1D4ED8).withValues(alpha: 0.2)),
+                        ),
+                        child: Text(s,
+                            style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF1D4ED8))),
+                      )).toList(),
+                ),
+                const SizedBox(height: 20),
+                Text('Rating Breakdown',
+                    style: GoogleFonts.inter(
+                        fontSize: 13, fontWeight: FontWeight.w600,
+                        color: cs.onSurface)),
+                const SizedBox(height: 10),
+                ...[
+                  ('Quality of work',   4.5, 62),
+                  ('Timeliness',        4.0, 38),
+                  ('Communication',     4.3, 48),
+                  ('Value for money',   4.1, 55),
+                ].map((r) => _RatingRow(
+                    label: r.$1, rating: r.$2, count: r.$3)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileStat extends StatelessWidget {
+  final String label, value;
+  const _ProfileStat({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 160,
+            child: Text(label,
+                style: GoogleFonts.inter(
+                    fontSize: 12, color: cs.onSurfaceVariant)),
+          ),
+          Expanded(
+            child: Text(value,
+                style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RatingRow extends StatelessWidget {
+  final String label;
+  final double rating;
+  final int count;
+  const _RatingRow(
+      {required this.label, required this.rating, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Text(label,
+                style: GoogleFonts.inter(
+                    fontSize: 11, color: cs.onSurface)),
+          ),
+          Expanded(
+            flex: 4,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(100),
+              child: LinearProgressIndicator(
+                value: rating / 5,
+                minHeight: 6,
+                backgroundColor: Theme.of(context).dividerColor,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFFF59E0B)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text('${rating.toStringAsFixed(1)} ($count)',
+              style: GoogleFonts.inter(
+                  fontSize: 10, color: cs.onSurfaceVariant)),
+        ],
+      ),
+    );
+  }
+}

@@ -70,6 +70,21 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  # POLISH 3: native splash — run: flutter pub run flutter_native_splash:create
+  flutter_native_splash: ^2.4.1
+
+# ── Native splash configuration (POLISH 3) ─────────────────────────────────────
+# After adding the package above and running `flutter pub get`, execute:
+#   flutter pub run flutter_native_splash:create
+# This generates the native Android/iOS splash assets matching the app splash.
+flutter_native_splash:
+  color: "#1C3A7A"          # dark navy — matches SplashScreen background
+  image: assets/images/splash_logo.png   # place a white BuildOS icon here
+  android: true
+  ios: true
+  fullscreen: false
+  android_gravity: center
+  ios_content_mode: center
 
 flutter:
   uses-material-design: true

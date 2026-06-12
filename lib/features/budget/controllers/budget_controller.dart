@@ -84,6 +84,11 @@ class BudgetController extends GetxController {
   final selectedDate     = DateTime.now().obs;
   final selectedStageId  = Rxn<String>();
   final isSaving         = false.obs;
+  // PK5: Cash (نقد) is always first and default
+  final paymentMethod    = 'Cash (نقد)'.obs;
+  static const paymentMethods = [
+    'Cash (نقد)', 'Bank Transfer', 'Cheque', 'JazzCash / Easypaisa',
+  ];
 
   Future<void> saveExpense() async {
     final title  = itemNameCtrl.text.trim();

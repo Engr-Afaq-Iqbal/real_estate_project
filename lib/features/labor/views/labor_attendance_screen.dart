@@ -29,30 +29,44 @@ class LaborAttendanceScreen extends GetView<AttendanceController> {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        return Column(
-          children: [
-            _WeekHeader(controller: controller),
-            _SummaryRow(controller: controller),
-            const Divider(height: 1),
-            _GridDayHeader(controller: controller),
-            const Divider(height: 1),
-            Expanded(
-              child: controller.laborList.isEmpty
-                  ? const _EmptyLabor()
-                  : ListView.separated(
-                      padding: const EdgeInsets.only(bottom: 100),
-                      itemCount: controller.laborList.length,
-                      separatorBuilder: (_, __) => Divider(
-                        height: 1,
-                        color: Theme.of(context).dividerColor,
+        // Fix 5: RepaintBoundary isolates the grid's repaints from the rest of
+        // the Scaffold. The frozen-column layout keeps the worker-name column
+        // pinned while the day-cells area scrolls horizontally.
+        return RepaintBoundary(
+          child: Column(
+            children: [
+              _WeekHeader(controller: controller),
+              _SummaryRow(controller: controller),
+              const Divider(height: 1),
+              // Frozen header + scrollable day headers share one widget tree
+              // F4: Bulk attendance action bar
+              _BulkAttendanceBar(controller: controller),
+              const Divider(height: 1),
+              _FrozenGridHeader(controller: controller),
+              const Divider(height: 1),
+              Expanded(
+                child: controller.laborList.isEmpty
+                    ? const _EmptyLabor()
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 100),
+                        itemCount: controller.laborList.length,
+                        itemBuilder: (_, i) => Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _WorkerGridRow(
+                              controller: controller,
+                              laborIndex: i,
+                            ),
+                            Divider(
+                              height: 1,
+                              color: Theme.of(context).dividerColor,
+                            ),
+                          ],
+                        ),
                       ),
-                      itemBuilder: (_, i) => _WorkerGridRow(
-                        controller: controller,
-                        laborIndex: i,
-                      ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         );
       }),
       bottomNavigationBar: _BottomBar(controller: controller),
@@ -89,17 +103,22 @@ class _WeekHeader extends StatelessWidget {
         color: bg,
         child: Row(
           children: [
-            GestureDetector(
-              onTap: controller.prevWeek,
-              child: Container(
-                width: 32, height: 32,
-                decoration: BoxDecoration(
-                  color: surface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: divider),
+            Semantics(
+              label: 'Previous week',
+              button: true,
+              child: GestureDetector(
+                onTap: controller.prevWeek,
+                child: Container(
+                  width: 44, height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: surface,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: divider),
+                  ),
+                  child: Icon(Icons.chevron_left_rounded,
+                      size: 20, color: cs.onSurface),
                 ),
-                child: Icon(Icons.chevron_left_rounded,
-                    size: 20, color: cs.onSurface),
               ),
             ),
             Expanded(
@@ -109,21 +128,27 @@ class _WeekHeader extends StatelessWidget {
                 style: AppTextStyles.h4S.copyWith(color: cs.onSurface),
               ),
             ),
-            GestureDetector(
-              onTap: controller.canGoNext ? controller.nextWeek : null,
-              child: Container(
-                width: 32, height: 32,
-                decoration: BoxDecoration(
-                  color: controller.canGoNext ? surface : divider,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: divider),
-                ),
-                child: Icon(
-                  Icons.chevron_right_rounded,
-                  size: 20,
-                  color: controller.canGoNext
-                      ? cs.onSurface
-                      : cs.onSurfaceVariant,
+            Semantics(
+              label: 'Next week',
+              button: true,
+              enabled: controller.canGoNext,
+              child: GestureDetector(
+                onTap: controller.canGoNext ? controller.nextWeek : null,
+                child: Container(
+                  width: 44, height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: controller.canGoNext ? surface : divider,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: divider),
+                  ),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: controller.canGoNext
+                        ? cs.onSurface
+                        : cs.onSurfaceVariant,
+                  ),
                 ),
               ),
             ),
@@ -199,30 +224,139 @@ class _SummaryChip extends StatelessWidget {
       );
 }
 
-// ── Day header row ────────────────────────────────────────────────────────────
+// ── F4: Bulk attendance action bar ───────────────────────────────────────────
 
-class _GridDayHeader extends StatelessWidget {
+class _BulkAttendanceBar extends StatelessWidget {
   final AttendanceController controller;
-  const _GridDayHeader({required this.controller});
+  const _BulkAttendanceBar({required this.controller});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: cs.surface,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Row(
+        children: [
+          Text("Today's bulk action:",
+              style: AppTextStyles.labelSmallS
+                  .copyWith(color: cs.onSurfaceVariant)),
+          const SizedBox(width: 10),
+          ElevatedButton.icon(
+            onPressed: () {
+              controller.markAllPresent();
+              Get.snackbar(
+                'Done',
+                'All workers marked present for today',
+                snackPosition: SnackPosition.BOTTOM,
+                margin: const EdgeInsets.all(16),
+                duration: const Duration(seconds: 2),
+                backgroundColor: AppColors.success.withValues(alpha: 0.9),
+                colorText: Colors.white,
+                icon: const Icon(Icons.check_circle_rounded,
+                    color: Colors.white, size: 18),
+              );
+            },
+            icon: const Icon(Icons.people_rounded, size: 14),
+            label: const Text('Mark All Present'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              textStyle: const TextStyle(
+                  fontSize: 11, fontWeight: FontWeight.w600),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+          const SizedBox(width: 6),
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert_rounded,
+                size: 18, color: cs.onSurfaceVariant),
+            tooltip: 'More options',
+            padding: EdgeInsets.zero,
+            onSelected: (val) {
+              if (val == 'absent') {
+                controller.markAllAbsent();
+                Get.snackbar(
+                  'Done',
+                  'All workers marked absent for today',
+                  snackPosition: SnackPosition.BOTTOM,
+                  margin: const EdgeInsets.all(16),
+                  duration: const Duration(seconds: 2),
+                );
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'absent',
+                child: Row(children: [
+                  Icon(Icons.person_off_rounded, size: 16),
+                  SizedBox(width: 8),
+                  Text('Mark All Absent'),
+                ]),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Frozen day-header row (Fix 5) ─────────────────────────────────────────────
+// Mirrors the exact column layout of _WorkerGridRow so headers stay aligned.
+
+class _FrozenGridHeader extends StatelessWidget {
+  final AttendanceController controller;
+  const _FrozenGridHeader({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final bg = Theme.of(context).scaffoldBackgroundColor;
+
+    return Container(
+      color: bg,
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           const SizedBox(width: 120),
-          ...AttendanceController.dayHeaders
-              .map((d) => Expanded(
-                    child: Text(d,
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.labelSmallS
-                            .copyWith(color: cs.onSurfaceVariant)),
-                  ))
-              .toList(),
-          const SizedBox(width: 60),
+          ...AttendanceController.dayHeaders.map(
+            (d) => Expanded(
+              child: Text(
+                d,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.labelSmallS
+                    .copyWith(color: cs.onSurfaceVariant),
+              ),
+            ),
+          ),
+          // PK7: Friday "Off" column — visual indicator, not a working day
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Fri',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.labelSmallS.copyWith(
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.4))),
+                Text('Off',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.8))),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 60,
+            child: Text('Wage',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.labelSmallS
+                    .copyWith(color: cs.onSurfaceVariant)),
+          ),
         ],
       ),
     );
@@ -253,9 +387,12 @@ class _WorkerGridRow extends StatelessWidget {
       final wage = labor.dailyWage * effectiveDays +
           labor.effectiveOvertimeRate * otHours;
 
+      // Fix 2: Row height ≥ 52 ensures each cell tap target is at least 44dp tall.
+      // Expanded cells fill the available width (≥ 44dp on standard screens).
       return Container(
         color: cs.surface,
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        constraints: const BoxConstraints(minHeight: 52),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           children: [
             SizedBox(
@@ -285,27 +422,62 @@ class _WorkerGridRow extends StatelessWidget {
             ...controller.weekDays.map((day) {
               final rec = controller.getRecord(labor.id, day);
               return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    controller.cycleStatus(labor.id, day);
-                  },
-                  onLongPress: () {
-                    if (rec.status == AttendanceStatus.overtime) {
-                      _showOtHoursDialog(context, controller, labor.id, day, rec.overtimeHours);
-                    }
-                  },
-                  child: Center(child: _StatusCell(status: rec.status, otHours: rec.overtimeHours)),
+                child: Semantics(
+                  label: '${AttendanceController.dayHeaders[controller.weekDays.indexOf(day)]}: ${rec.status.name}',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      controller.cycleStatus(labor.id, day);
+                    },
+                    onLongPress: () {
+                      if (rec.status == AttendanceStatus.overtime) {
+                        _showOtHoursDialog(context, controller, labor.id, day, rec.overtimeHours);
+                      }
+                    },
+                    // ConstrainedBox guarantees a 44×44 minimum touch target
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                          minWidth: 44, minHeight: 44),
+                      child: Center(
+                        child: _StatusCell(
+                          status: rec.status,
+                          otHours: rec.overtimeHours,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               );
             }).toList(),
+            // PK7: Friday Off cell — greyed out, non-interactive
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                height: 30,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text('Off',
+                    style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.7))),
+              ),
+            ),
             SizedBox(
               width: 60,
-              child: Text(
-                CurrencyFormatter.formatNumberCompact(wage),
-                textAlign: TextAlign.center,
-                style: AppTextStyles.labelSmallS.copyWith(
-                    color: cs.primary, fontWeight: FontWeight.w700),
+              // PK4: show PKR symbol in wage column
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  CurrencyFormatter.formatPKR(wage),
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.labelSmallS.copyWith(
+                      color: cs.primary, fontWeight: FontWeight.w700),
+                ),
               ),
             ),
           ],

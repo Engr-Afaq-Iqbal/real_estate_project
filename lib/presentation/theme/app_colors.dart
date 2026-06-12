@@ -27,8 +27,8 @@ class AppColors {
   static const Color dividerLight = Color(0xFFE2E8F0);
   static const Color borderLight = Color(0xFFCBD5E1);
   static const Color textPrimaryLight = Color(0xFF0F172A);
-  static const Color textSecondaryLight = Color(0xFF64748B);
-  static const Color textTertiaryLight = Color(0xFF94A3B8);
+  static const Color textSecondaryLight = Color(0xFF4B5563); // was #64748B — darkened for WCAG AA 4.5:1
+  static const Color textTertiaryLight = Color(0xFF6B7280); // was #94A3B8 (2.5:1 fail) — 4.8:1 on white
   static const Color iconLight = Color(0xFF475569);
 
   // ── Dark theme ─────────────────────────────────────────────────────────────

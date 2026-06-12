@@ -16,8 +16,19 @@ class OnboardingController extends GetxController {
     if (isLoggedIn) {
       Get.offAllNamed(AppRoutes.main);
     } else {
-      Get.offNamed(AppRoutes.roleSelection);
+      // POLISH 1: show onboarding only on first launch
+      final seen = LocalStorage.getBool(StorageKeys.onboardingSeen) ?? false;
+      if (seen) {
+        Get.offNamed(AppRoutes.roleSelection);
+      } else {
+        Get.offNamed(AppRoutes.onboarding);
+      }
     }
+  }
+
+  Future<void> completeOnboarding() async {
+    await LocalStorage.setBool(StorageKeys.onboardingSeen, true);
+    Get.offNamed(AppRoutes.roleSelection);
   }
 
   bool get isHomeownerRole =>

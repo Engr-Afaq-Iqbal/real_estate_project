@@ -10,6 +10,118 @@ import '../../../presentation/routes/app_routes.dart';
 // _kDanger stays const — it's a semantic status color, not a theme token
 const _kDanger = Color(0xFFDC2626);
 
+// POLISH 4: Simulated push notification banner
+void _showTestNotification(BuildContext context) {
+  final overlay = Overlay.of(context);
+  late OverlayEntry entry;
+
+  entry = OverlayEntry(
+    builder: (_) => _NotificationBanner(
+      onDismiss: () => entry.remove(),
+    ),
+  );
+
+  overlay.insert(entry);
+  // Auto-dismiss after 4 seconds
+  Future.delayed(const Duration(seconds: 4), () {
+    if (entry.mounted) entry.remove();
+  });
+}
+
+class _NotificationBanner extends StatefulWidget {
+  final VoidCallback onDismiss;
+  const _NotificationBanner({required this.onDismiss});
+
+  @override
+  State<_NotificationBanner> createState() => _NotificationBannerState();
+}
+
+class _NotificationBannerState extends State<_NotificationBanner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 350));
+    _slide = Tween<Offset>(
+            begin: const Offset(0, -1.2), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.of(context).padding.top;
+    return Positioned(
+      top: top + 8,
+      left: 12,
+      right: 12,
+      child: SlideTransition(
+        position: _slide,
+        child: GestureDetector(
+          onTap: widget.onDismiss,
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(14),
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E3A8A),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.construction_rounded,
+                        color: Colors.white, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('BuildOS',
+                            style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white)),
+                        Text(
+                          'Foundation stage updated to 75% by Supervisor Ahmed',
+                          style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: Colors.white.withValues(alpha: 0.85)),
+                          maxLines: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('now',
+                      style: GoogleFonts.inter(
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.5))),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -47,12 +159,40 @@ class SettingsScreen extends StatelessWidget {
 
           _SectionHeader('LANGUAGE'),
           _Group(children: [
+            // PK6: Urdu toggle is hidden behind "Coming Soon" until all strings are translated
             _NavigationRow(
               icon: Icons.language_rounded,
               label: 'App Language',
-              trailing: Obx(() => Text(
-                  ctrl.appLanguage.value == 'ur' ? 'اردو' : 'English',
-                  style: _trailingStyle(context))),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text('اردو Coming Soon 🔜',
+                        style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFF59E0B))),
+                  ),
+                  const SizedBox(width: 6),
+                  Text('English', style: _trailingStyle(context)),
+                ],
+              ),
+              // Tap shows info instead of toggling
+              onTap: () => Get.snackbar(
+                'اردو Coming Soon',
+                'Full Urdu interface is being prepared. '
+                'It will be available in the next update. / '
+                'اردو زبان جلد آ رہی ہے۔',
+                snackPosition: SnackPosition.BOTTOM,
+                margin: const EdgeInsets.all(16),
+                duration: const Duration(seconds: 3),
+              ),
             ),
           ]),
           const SizedBox(height: 24),
@@ -79,30 +219,55 @@ class SettingsScreen extends StatelessWidget {
                   icon: Icons.notifications_active_outlined,
                   label: 'Push Notifications',
                   value: ctrl.notificationsEnabled.value,
-                  onChanged: (v) => ctrl.notificationsEnabled.value = v,
+                  onChanged: ctrl.setNotificationsEnabled,
                 ),
                 const _Divider(),
                 _ToggleRow(
                   icon: Icons.email_outlined,
                   label: 'Email Notifications',
                   value: ctrl.emailNotifications.value,
-                  onChanged: (v) => ctrl.emailNotifications.value = v,
+                  onChanged: ctrl.setEmailNotifications,
                 ),
                 const _Divider(),
                 _ToggleRow(
                   icon: Icons.construction_outlined,
                   label: 'Project Update Alerts',
                   value: ctrl.projectUpdateAlerts.value,
-                  onChanged: (v) => ctrl.projectUpdateAlerts.value = v,
+                  onChanged: ctrl.setProjectUpdateAlerts,
                 ),
                 const _Divider(),
                 _ToggleRow(
                   icon: Icons.sms_outlined,
                   label: 'SMS Alerts',
                   value: ctrl.smsAlerts.value,
-                  onChanged: (v) => ctrl.smsAlerts.value = v,
+                  onChanged: ctrl.setSmsAlerts,
                 ),
               ])),
+          const SizedBox(height: 12),
+          // POLISH 4: Test notification button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _Group(children: [
+              _NavigationRow(
+                icon: Icons.notifications_none_rounded,
+                label: 'Test Notification',
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text('Demo',
+                      style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1E3A8A))),
+                ),
+                onTap: () => _showTestNotification(context),
+              ),
+            ]),
+          ),
           const SizedBox(height: 24),
 
           _SectionHeader('SECURITY'),

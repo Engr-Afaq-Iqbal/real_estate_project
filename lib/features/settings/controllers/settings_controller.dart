@@ -13,7 +13,7 @@ class SettingsController extends GetxController {
   final defaultCurrency    = 'PKR'.obs;
   final measurementUnit    = 'Marla'.obs;
 
-  // ── Notifications ─────────────────────────────────────────────────────────
+  // ── Notifications (POLISH 4 — persisted to LocalStorage) ─────────────────
   final notificationsEnabled   = true.obs;
   final emailNotifications     = false.obs;
   final projectUpdateAlerts    = true.obs;
@@ -75,6 +75,37 @@ class SettingsController extends GetxController {
         LocalStorage.getString(StorageKeys.measurementUnit) ?? 'Marla';
     selectedThemeColor.value =
         LocalStorage.getInt(StorageKeys.themeColor) ?? 0;
+    // POLISH 4: restore notification toggle states
+    notificationsEnabled.value =
+        LocalStorage.getBool('notif_enabled') ?? true;
+    emailNotifications.value  =
+        LocalStorage.getBool('notif_email') ?? false;
+    projectUpdateAlerts.value =
+        LocalStorage.getBool('notif_project') ?? true;
+    smsAlerts.value           =
+        LocalStorage.getBool('notif_sms') ?? false;
+  }
+
+  // ── POLISH 4: Notification helpers ────────────────────────────────────────
+
+  void setNotificationsEnabled(bool v) {
+    notificationsEnabled.value = v;
+    LocalStorage.setBool('notif_enabled', v);
+  }
+
+  void setEmailNotifications(bool v) {
+    emailNotifications.value = v;
+    LocalStorage.setBool('notif_email', v);
+  }
+
+  void setProjectUpdateAlerts(bool v) {
+    projectUpdateAlerts.value = v;
+    LocalStorage.setBool('notif_project', v);
+  }
+
+  void setSmsAlerts(bool v) {
+    smsAlerts.value = v;
+    LocalStorage.setBool('notif_sms', v);
   }
 
   // ── Theme mode ────────────────────────────────────────────────────────────

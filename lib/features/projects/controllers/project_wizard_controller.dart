@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../config/wizard_step_config.dart';
 import '../../../core/utils/unit_converter.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../market/controllers/market_controller.dart';
 
 const _uuid = Uuid();
 
@@ -102,7 +103,14 @@ class ProjectWizardController extends GetxController {
     _resetStep2Fields();
     ever(plotUnit,             (_) { _updatePlotHint(); _updatePlotSqm(); });
     ever(constructionAreaUnit, (_) => _updateConstructionSqm());
+    ever(marlaStandard,        (_) { _updatePlotHint(); _updatePlotSqm(); _updateConstructionSqm(); });
     stages.value = _generateStages();
+
+    // Pre-fill country from MarketController if available
+    if (Get.isRegistered<MarketController>()) {
+      selectedCountryCode.value =
+          Get.find<MarketController>().selectedCode;
+    }
   }
 
   // ── Step 2: Location ──────────────────────────────────────────────────────
@@ -140,6 +148,12 @@ class ProjectWizardController extends GetxController {
   final plotSizeCtrl          = TextEditingController();
   final plotUnit              = 'marla'.obs;
   final constructionAreaCtrl  = TextEditingController();
+  // PK Fix 1: Marla standard — 'standard' (272.25 sqft) or 'lda' (225 sqft)
+  final marlaStandard = 'standard'.obs;
+  double get marlaSqft =>
+      marlaStandard.value == 'lda'
+          ? UnitConverter.marlaLdaSqft
+          : UnitConverter.marlaStandardSqft;
   final constructionAreaUnit  = 'marla'.obs;
   final plotWidthCtrl         = TextEditingController();
   final plotDepthCtrl         = TextEditingController();
@@ -168,14 +182,16 @@ class ProjectWizardController extends GetxController {
   void _updatePlotSqm() {
     final val = double.tryParse(plotSizeCtrl.text.trim());
     plotSizeSqmObs.value = val != null && val > 0
-        ? UnitConverter.toSqMeters(val, plotUnit.value)
+        ? UnitConverter.toSqMeters(val, plotUnit.value,
+            sqftPerMarla: marlaSqft)
         : null;
   }
 
   void _updateConstructionSqm() {
     final val = double.tryParse(constructionAreaCtrl.text.trim());
     constructionAreaSqmObs.value = val != null && val > 0
-        ? UnitConverter.toSqMeters(val, constructionAreaUnit.value)
+        ? UnitConverter.toSqMeters(val, constructionAreaUnit.value,
+            sqftPerMarla: marlaSqft)
         : null;
   }
 
@@ -197,8 +213,20 @@ class ProjectWizardController extends GetxController {
     final val = double.tryParse(plotSizeCtrl.text.trim());
     if (val == null || val <= 0) { plotHintText.value = ''; return; }
     final unit = plotUnit.value;
-    plotHintText.value = UnitConverter.hint(
-        val, unit, unit == 'marla' ? ['sqft', 'sqm'] : ['marla', 'sqft']);
+    final sqm  = UnitConverter.toSqMeters(val, unit, sqftPerMarla: marlaSqft);
+    final parts = <String>[];
+    if (unit != 'sqft') {
+      final sqft = UnitConverter.fromSqMeters(sqm, 'sqft');
+      parts.add('${sqft.toStringAsFixed(0)} sq ft');
+    }
+    if (unit != 'sqm') {
+      parts.add('${sqm.toStringAsFixed(1)} sq m');
+    }
+    if (unit != 'marla' && marlaStandard.value == 'standard') {
+      final marla = UnitConverter.fromSqMeters(sqm, 'marla', sqftPerMarla: marlaSqft);
+      parts.add('${marla.toStringAsFixed(1)} Marla');
+    }
+    plotHintText.value = parts.join('  =  ');
   }
 
   // ── Step 3: Budget ────────────────────────────────────────────────────────
@@ -294,7 +322,13 @@ class ProjectWizardController extends GetxController {
   Future<void> verifyCompanyCode() async {
     if (companyCodeCtrl.text.trim().isEmpty) return;
     await Future.delayed(const Duration(seconds: 1));
-    companyRequestSent.value = true;
+    // POLISH 5: demo codes trigger verified state; others show request-sent
+    final code = companyCodeCtrl.text.trim().toUpperCase();
+    if (code.startsWith('BC-') || code.startsWith('VC-') || code == 'DEMO') {
+      companyVerified.value = true;
+    } else {
+      companyRequestSent.value = true;
+    }
   }
 
   // ── Step 5: Create project ────────────────────────────────────────────────

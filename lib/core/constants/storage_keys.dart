@@ -17,6 +17,13 @@ class StorageKeys {
   static const String measurementUnit = 'measurement_unit';
   static const String notificationsEnabled = 'notifications_enabled';
 
+  // Onboarding
+  static const String onboardingSeen  = 'onboarding_seen';
+
+  // Market selector
+  static const String selectedMarket  = 'selected_market';
+  static const String recentMarkets   = 'recent_markets';
+
   // Cache
   static const String cachedProjects = 'cached_projects';
   static const String cachedUserProfile = 'cached_user_profile';

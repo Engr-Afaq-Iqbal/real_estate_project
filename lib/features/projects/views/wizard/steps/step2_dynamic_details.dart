@@ -97,7 +97,10 @@ class _TextInputField extends GetView<ProjectWizardController> {
     return Obx(() {
       final errorText = isNameField ? controller.nameError.value : null;
       final hasError  = errorText != null;
-      return Column(
+      // Fix 5: MergeSemantics groups label + field so TalkBack/VoiceOver
+      // reads them together as one element.
+      return MergeSemantics(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _FieldLabel(field.label),
@@ -122,14 +125,15 @@ class _TextInputField extends GetView<ProjectWizardController> {
               }
             },
           ),
-          if (hasError)
+          if (errorText != null)
             Padding(
               padding: const EdgeInsets.only(top: 5, left: 4),
-              child: Text(errorText!,
+              child: Text(errorText,
                   style: GoogleFonts.inter(fontSize: 12, color: cs.error)),
             ),
         ],
-      );
+        ),  // Column
+      );   // MergeSemantics
     });
   }
 }

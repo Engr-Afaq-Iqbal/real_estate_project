@@ -1,6 +1,7 @@
 abstract class AppRoutes {
   // ── Onboarding ────────────────────────────────────────────────────────────
   static const splash         = '/';
+  static const onboarding     = '/onboarding';
   static const roleSelection  = '/role-selection';
 
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -23,6 +24,7 @@ abstract class AppRoutes {
   static const projectStageTracker = '/projects/stage-tracker';
   static const stageDetail        = '/projects/stage-detail';
   static const projectHandover    = '/projects/handover';
+  static const projectReport      = '/projects/report';
 
   // ── Updates & Communication ───────────────────────────────────────────────
   static const photoVideoFeed    = '/updates/feed';
@@ -38,13 +40,26 @@ abstract class AppRoutes {
   static const laborAttendance  = '/labor/attendance';
   static const payroll          = '/labor/payroll';
 
+  // ── Market ────────────────────────────────────────────────────────────────
+  static const marketPrices       = '/market/prices';
+
   // ── Calculator ────────────────────────────────────────────────────────────
-  static const calculatorHub      = '/calculator';
-  static const materialCalculator = '/calculator/material';
-  static const houseEstimator     = '/calculator/house';
-  static const whatIfCalculator   = '/calculator/what-if';
-  static const calculatorForm     = '/calculator/form';        // legacy, keep
-  static const savedCalculations  = '/calculator/saved';
+  // Deprecated for current release — hub screen moved to the Home Dashboard
+  // estimator section. Constant kept for future reactivation.
+  static const calculatorHub         = '/calculator';
+  static const materialCalculator    = '/calculator/material';
+  // Feature temporarily disabled — Full Estimate screen preserved for future
+  // implementation. Constant kept so commented references compile on restore.
+  static const houseEstimator        = '/calculator/house';
+  static const whatIfCalculator      = '/calculator/what-if';
+  static const calculatorForm        = '/calculator/form';        // legacy, keep
+  static const savedCalculations     = '/calculator/saved';
+  static const areaEstimator         = '/calculator/area-estimator';
+  static const materialCostCalc      = '/calculator/material-cost';
+  static const floorPlanEstimator    = '/calculator/floor-plan-estimator';
+
+  // ── Tasks ─────────────────────────────────────────────────────────────────
+  static const tasks = '/tasks';
 
   // ── Documents ─────────────────────────────────────────────────────────────
   static const documentsVault = '/documents';

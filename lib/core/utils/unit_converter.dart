@@ -54,20 +54,44 @@ class UnitConverter {
     'sqm',
   ];
 
-  static double toSqMeters(double value, String unit) {
+  // PK Fix 1: Marla standards used in Pakistan
+  /// Standard Marla = 272.25 sq ft (PEPCO / DHA / Bahria)
+  static const double marlaStandardSqft = 272.25;
+  /// Old LDA scheme Marla = 225 sq ft (older Lahore Development Authority plots)
+  static const double marlaLdaSqft      = 225.0;
+
+  static double marlaToSqm(double marla, {double sqftPerMarla = marlaStandardSqft}) =>
+      marla * sqftPerMarla * 0.09290304;
+
+  static double sqmToMarla(double sqm, {double sqftPerMarla = marlaStandardSqft}) =>
+      sqm / (sqftPerMarla * 0.09290304);
+
+  static double toSqMeters(double value, String unit,
+      {double sqftPerMarla = marlaStandardSqft}) {
+    if (unit.toLowerCase() == 'marla') {
+      return marlaToSqm(value, sqftPerMarla: sqftPerMarla);
+    }
     final factor = _toSqMeters[unit.toLowerCase()];
     assert(factor != null, 'Unknown unit: $unit');
     return value * (factor ?? 1.0);
   }
 
-  static double fromSqMeters(double sqm, String toUnit) {
+  static double fromSqMeters(double sqm, String toUnit,
+      {double sqftPerMarla = marlaStandardSqft}) {
+    if (toUnit.toLowerCase() == 'marla') {
+      return sqmToMarla(sqm, sqftPerMarla: sqftPerMarla);
+    }
     final factor = _toSqMeters[toUnit.toLowerCase()];
     assert(factor != null, 'Unknown unit: $toUnit');
     return sqm / (factor ?? 1.0);
   }
 
-  static double convert(double value, String fromUnit, String toUnit) {
-    return fromSqMeters(toSqMeters(value, fromUnit), toUnit);
+  static double convert(double value, String fromUnit, String toUnit,
+      {double sqftPerMarla = marlaStandardSqft}) {
+    return fromSqMeters(
+        toSqMeters(value, fromUnit, sqftPerMarla: sqftPerMarla),
+        toUnit,
+        sqftPerMarla: sqftPerMarla);
   }
 
   /// Format a sq_meters value in the desired display unit

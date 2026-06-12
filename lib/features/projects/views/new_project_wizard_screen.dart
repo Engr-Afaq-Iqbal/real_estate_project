@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../controllers/project_wizard_controller.dart';
@@ -135,23 +136,33 @@ class _SegmentedProgress extends StatelessWidget {
 
     return Obx(() {
       final current = controller.currentStep.value;
-      return Container(
-        color: surface,
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: Row(
-          children: List.generate(
-            ProjectWizardController.totalSteps,
-            (i) => Expanded(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 350),
-                curve: Curves.easeInOut,
-                height: 4,
-                margin: EdgeInsets.only(
-                    right:
-                        i < ProjectWizardController.totalSteps - 1 ? 4 : 0),
-                decoration: BoxDecoration(
-                  color: i <= current ? cs.primary : divider,
-                  borderRadius: BorderRadius.circular(2),
+      // Fix 5: Announce progress as a polite status for screen readers;
+      // ExcludeSemantics on the visual bars (the step-counter chip already
+      // announces the exact step number).
+      return Semantics(
+        label: 'Step ${current + 1} of ${ProjectWizardController.totalSteps}',
+        liveRegion: true,
+        child: ExcludeSemantics(
+          child: Container(
+            color: surface,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Row(
+              children: List.generate(
+                ProjectWizardController.totalSteps,
+                (i) => Expanded(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeInOut,
+                    height: 4,
+                    margin: EdgeInsets.only(
+                        right: i < ProjectWizardController.totalSteps - 1
+                            ? 4
+                            : 0),
+                    decoration: BoxDecoration(
+                      color: i <= current ? cs.primary : divider,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -186,12 +197,16 @@ class _StepTitle extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
         child: Align(
           alignment: Alignment.centerLeft,
-          child: Text(
-            _subtitles[step],
-            style: GoogleFonts.inter(
-                fontSize: 13,
-                color: cs.onSurfaceVariant,
-                fontWeight: FontWeight.w400),
+          // Fix 5: Mark as a heading so screen readers treat it as a section start
+          child: Semantics(
+            header: true,
+            child: Text(
+              _subtitles[step],
+              style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w400),
+            ),
           ),
         ),
       );
@@ -222,8 +237,13 @@ class _BottomCta extends StatelessWidget {
         final isLast     = controller.isLastStep;
         final isCreating = controller.isCreating.value;
 
-        return GestureDetector(
+        // Fix 5: Semantics marks the button with a meaningful action label
+        return Semantics(
+          button: true,
+          label: isLast ? 'Create Project' : 'Continue to next step',
+          child: GestureDetector(
             onTap: () {
+              HapticFeedback.lightImpact(); // POLISH 4
               if (isLast) {
                 controller.createProject();
               } else {
@@ -249,14 +269,19 @@ class _BottomCta extends StatelessWidget {
                       width: 22, height: 22,
                       child: CircularProgressIndicator(
                           strokeWidth: 2.5, color: Colors.white))
-                  : Text(
-                      isLast ? 'Create Project 🚀' : 'Continue →',
-                      style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white),
+                  // Fix 3: FittedBox keeps button label on one line at any font scale
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        isLast ? 'Create Project 🚀' : 'Continue →',
+                        style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white),
+                      ),
                     ),
             ),
+          ),
         );
       }),
     );

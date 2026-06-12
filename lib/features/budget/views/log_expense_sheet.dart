@@ -129,6 +129,37 @@ class LogExpenseSheet extends GetView<BudgetController> {
             ),
             const SizedBox(height: AppDimensions.md),
 
+            // PK5: Payment method — Cash (نقد) always first
+            Text('payment_method'.tr, style: AppTextStyles.labelMedium(context)),
+            const SizedBox(height: AppDimensions.sm),
+            Obx(() => Wrap(
+              spacing: 8, runSpacing: 6,
+              children: BudgetController.paymentMethods.map((m) {
+                final sel = controller.paymentMethod.value == m;
+                return GestureDetector(
+                  onTap: () => controller.paymentMethod.value = m,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: sel ? AppColors.primary : Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                      border: Border.all(
+                          color: sel ? AppColors.primary : AppColors.borderLight),
+                    ),
+                    child: Text(m,
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: sel ? Colors.white
+                                : AppColors.textSecondaryLight)),
+                  ),
+                );
+              }).toList(),
+            )),
+            const SizedBox(height: AppDimensions.md),
+
             // Receipt upload
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
