@@ -58,6 +58,12 @@ abstract class AppRoutes {
   static const materialCostCalc      = '/calculator/material-cost';
   static const floorPlanEstimator    = '/calculator/floor-plan-estimator';
 
+  // ── Teams (Contractor only) ───────────────────────────────────────────────
+  static const teamDashboard = '/teams';
+  static const teamDetail    = '/teams/detail';
+  static const createTeam    = '/teams/create';
+  static const addWorker     = '/teams/add-worker';
+
   // ── Tasks ─────────────────────────────────────────────────────────────────
   static const tasks = '/tasks';
 

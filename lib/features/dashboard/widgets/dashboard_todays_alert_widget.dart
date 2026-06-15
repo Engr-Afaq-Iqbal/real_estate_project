@@ -7,11 +7,13 @@ import '../../tasks/views/tasks_screen.dart'
     show taskTypeIcon, taskTypeColor, taskPriorityColor, taskDueLabel;
 import '../../../presentation/routes/app_routes.dart';
 
-/// "Today's Alert" — compact card shown directly below the dashboard header.
-///
-/// Shows only the most important / nearest upcoming item for today (plus a
-/// "+X more" pill when more are scheduled). Tapping navigates to the Tasks
-/// hub. Hidden entirely when nothing is due today.
+// Alert palette — warm red / rose tones for urgency without aggression
+const _kAlertRed    = Color(0xFFEF4444);
+const _kAlertRose   = Color(0xFFFB7185);
+const _kAlertAmber  = Color(0xFFF59E0B);
+
+/// Compact alert banner shown directly below the dashboard header.
+/// Slim, red-tinted, immediately distinguishable from all other dashboard cards.
 class DashboardTodaysAlertWidget extends StatelessWidget {
   const DashboardTodaysAlertWidget({super.key});
 
@@ -19,27 +21,43 @@ class DashboardTodaysAlertWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!Get.isRegistered<TasksController>()) return const SizedBox.shrink();
     final ctrl = Get.find<TasksController>();
-    final cs   = Theme.of(context).colorScheme;
 
     return Obx(() {
       final alert = ctrl.topTodayAlert;
       if (alert == null) return const SizedBox.shrink();
 
-      final more      = ctrl.moreTodayCount;
+      final more     = ctrl.moreTodayCount;
+      final isDark   = Theme.of(context).brightness == Brightness.dark;
+      final cs       = Theme.of(context).colorScheme;
+      final isOverdue = alert.isOverdue;
+
+      // Overdue → red; high-priority today → rose-red; else → amber
+      final accentColor = isOverdue
+          ? _kAlertRed
+          : alert.priority == 'high'
+              ? _kAlertRose
+              : _kAlertAmber;
+
       final typeColor = taskTypeColor(alert.type);
-      final prColor   = taskPriorityColor(alert.priority);
+
+      // Gradient: alert-tinted surface — soft enough to be readable
+      final bgStart = isDark
+          ? Color.lerp(cs.surface, accentColor, 0.18)!
+          : Color.lerp(const Color(0xFFFFF5F5), accentColor, 0.08)!;
+      final bgEnd = isDark
+          ? Color.lerp(cs.surface, accentColor, 0.08)!
+          : Color.lerp(Colors.white, accentColor, 0.04)!;
 
       return TweenAnimationBuilder<double>(
         tween: Tween(begin: 0, end: 1),
-        duration: const Duration(milliseconds: 380),
+        duration: const Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
         builder: (context, t, child) => Opacity(
           opacity: t,
-          child:
-              Transform.translate(offset: Offset(0, 10 * (1 - t)), child: child),
+          child: Transform.translate(offset: Offset(0, 8 * (1 - t)), child: child),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
           child: Semantics(
             label: "Today's alert: ${alert.title}",
             button: true,
@@ -49,123 +67,189 @@ class DashboardTodaysAlertWidget extends StatelessWidget {
                 Get.toNamed(AppRoutes.tasks);
               },
               child: Container(
-                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: cs.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: prColor.withValues(alpha: 0.35)),
+                  gradient: LinearGradient(
+                    colors: [bgStart, bgEnd],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  // Uniform border + left accent via Stack
+                  border: Border.all(
+                    color: accentColor.withValues(alpha: isDark ? 0.35 : 0.25),
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: prColor.withValues(alpha: 0.10),
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
+                      color: accentColor.withValues(alpha: isDark ? 0.20 : 0.12),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
-                child: Row(
-                  children: [
-                    // Pulsing type icon
-                    _PulsingIcon(color: typeColor, icon: taskTypeIcon(alert.type)),
-                    const SizedBox(width: 12),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Stack(
+                    children: [
+                      // ── Content ──────────────────────────────────────────
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 9, 10, 9),
+                        child: Row(
+                          children: [
+                            // Alert icon — compact pulsing chip
+                            _AlertIcon(
+                              color: accentColor,
+                              typeColor: typeColor,
+                              icon: taskTypeIcon(alert.type),
+                              isOverdue: isOverdue,
+                            ),
+                            const SizedBox(width: 10),
 
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Eyebrow + status badge
-                          Row(
-                            children: [
-                              Text("TODAY'S ALERT",
-                                  style: GoogleFonts.inter(
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.8,
-                                      color: prColor)),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 5, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: prColor.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                child: Text(
-                                    alert.isOverdue
-                                        ? 'OVERDUE'
-                                        : alert.priority.toUpperCase(),
+                            // Title + metadata
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Eyebrow row
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 5, vertical: 1.5),
+                                        decoration: BoxDecoration(
+                                          color: accentColor
+                                              .withValues(alpha: 0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          isOverdue
+                                              ? '⚠ OVERDUE'
+                                              : '🔔 TODAY\'S ALERT',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 8,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.5,
+                                            color: accentColor,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      // Priority dot
+                                      Container(
+                                        width: 5, height: 5,
+                                        decoration: BoxDecoration(
+                                          color: taskPriorityColor(
+                                              alert.priority),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        alert.priority.toUpperCase(),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 8,
+                                          fontWeight: FontWeight.w700,
+                                          color: taskPriorityColor(
+                                              alert.priority),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+
+                                  // Alert title
+                                  Text(
+                                    alert.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: GoogleFonts.inter(
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.w800,
-                                        color: prColor)),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: cs.onSurface,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+
+                                  // Time + type inline
+                                  Row(
+                                    children: [
+                                      Icon(Icons.schedule_rounded,
+                                          size: 9.5,
+                                          color: accentColor
+                                              .withValues(alpha: 0.80)),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        taskDueLabel(alert),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: accentColor
+                                              .withValues(alpha: 0.85),
+                                        ),
+                                      ),
+                                      Text(
+                                        '  ·  ${alert.typeLabel}',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 10,
+                                          color: cs.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 3),
-                          Text(alert.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: cs.onSurface)),
-                          const SizedBox(height: 3),
-                          Row(
-                            children: [
-                              Icon(Icons.schedule_rounded,
-                                  size: 10.5, color: cs.onSurfaceVariant),
-                              const SizedBox(width: 3),
-                              Text(taskDueLabel(alert),
-                                  style: GoogleFonts.inter(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w600,
-                                      color: cs.onSurfaceVariant)),
-                              const SizedBox(width: 8),
-                              Text('· ${alert.typeLabel}',
-                                  style: GoogleFonts.inter(
-                                      fontSize: 10.5,
-                                      color: cs.onSurfaceVariant)),
-                              if (alert.projectName != null) ...[
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text('· ${alert.projectName}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(width: 6),
+
+                            // Right side: "+X more" + chevron
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                if (more > 0) ...[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: accentColor.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      '+$more',
                                       style: GoogleFonts.inter(
-                                          fontSize: 10.5,
-                                          color: cs.onSurfaceVariant)),
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        color: accentColor,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                ],
+                                Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: 16,
+                                  color: accentColor.withValues(alpha: 0.70),
                                 ),
                               ],
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // "+X more" pill / chevron
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        if (more > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 7, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: cs.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Text('+$more more',
-                                style: GoogleFonts.inter(
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: cs.primary)),
-                          ),
-                        const SizedBox(height: 6),
-                        Icon(Icons.chevron_right_rounded,
-                            size: 18, color: cs.onSurfaceVariant),
-                      ],
-                    ),
-                  ],
+                          ],
+                        ),
+                      ),
+
+                      // Left accent strip
+                      Positioned(
+                        left: 0, top: 0, bottom: 0,
+                        child: Container(
+                          width: 3,
+                          color: accentColor.withValues(
+                              alpha: isDark ? 0.80 : 0.65),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -176,21 +260,28 @@ class DashboardTodaysAlertWidget extends StatelessWidget {
   }
 }
 
-/// Icon chip with a soft repeating pulse to draw attention without noise.
-class _PulsingIcon extends StatefulWidget {
+/// Compact icon chip — subtle pulse to draw attention.
+class _AlertIcon extends StatefulWidget {
   final Color color;
+  final Color typeColor;
   final IconData icon;
-  const _PulsingIcon({required this.color, required this.icon});
+  final bool isOverdue;
+  const _AlertIcon({
+    required this.color,
+    required this.typeColor,
+    required this.icon,
+    required this.isOverdue,
+  });
 
   @override
-  State<_PulsingIcon> createState() => _PulsingIconState();
+  State<_AlertIcon> createState() => _AlertIconState();
 }
 
-class _PulsingIconState extends State<_PulsingIcon>
+class _AlertIconState extends State<_AlertIcon>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1600),
+    duration: const Duration(milliseconds: 1400),
   )..repeat(reverse: true);
 
   @override
@@ -206,17 +297,19 @@ class _PulsingIconState extends State<_PulsingIcon>
       builder: (context, child) {
         final t = Curves.easeInOut.transform(_ctrl.value);
         return Container(
-          width: 42, height: 42,
+          width: 36, height: 36,
           decoration: BoxDecoration(
-            color: widget.color.withValues(alpha: 0.10 + 0.06 * t),
-            borderRadius: BorderRadius.circular(12),
+            color: widget.color.withValues(alpha: 0.12 + 0.08 * t),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
-                color: widget.color.withValues(alpha: 0.25 + 0.20 * t)),
+              color: widget.color.withValues(alpha: 0.30 + 0.20 * t),
+              width: 1,
+            ),
           ),
           child: child,
         );
       },
-      child: Icon(widget.icon, size: 20, color: widget.color),
+      child: Icon(widget.icon, size: 17, color: widget.color),
     );
   }
 }

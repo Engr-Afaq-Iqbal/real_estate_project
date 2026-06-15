@@ -5,16 +5,35 @@ import '../controllers/dashboard_controller.dart';
 import '../../projects/data/models/project_model.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../presentation/routes/app_routes.dart';
+import '../../shell/controllers/shell_controller.dart';
 
 const _kError   = Color(0xFFDC2626);
 const _kWarning = Color(0xFFF59E0B);
 const _kSuccess = Color(0xFF16A34A);
 const _kInfo    = Color(0xFF3B82F6);
 
+// Premium accent palette — rotates by project index.
+// Each accent drives the card gradient, left border, icon, and progress bar.
+const _kCardAccents = [
+  Color(0xFF3B82F6), // Blue
+  Color(0xFF0D9488), // Teal
+  Color(0xFFD97706), // Amber / Sand
+  Color(0xFF6366F1), // Indigo / Slate
+  Color(0xFF16A34A), // Green
+  Color(0xFF0EA5E9), // Sky / Grey-Blue
+];
+
 Color _primaryText(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
         ? Colors.white
         : Theme.of(context).colorScheme.primary;
+
+// Switch to the Projects tab (index 1) without pushing a new route.
+void _goToProjectsTab() {
+  if (Get.isRegistered<ShellController>()) {
+    Get.find<ShellController>().changeTab(1);
+  }
+}
 
 /// Upcoming tasks, budget alerts, and recent projects list.
 class DashboardRecentActivityWidget extends StatelessWidget {
@@ -418,7 +437,7 @@ class _RecentProjectsSection extends StatelessWidget {
               ),
             ),
             GestureDetector(
-              onTap: () => Get.toNamed(AppRoutes.myProjects),
+              onTap: _goToProjectsTab,
               child: Row(
                 children: [
                   Text('View All',
@@ -435,20 +454,29 @@ class _RecentProjectsSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
-        ...projects.map((p) => _ProjectCard(project: p)),
+        ...projects.asMap().entries.map(
+              (e) => _ProjectCard(project: e.value, index: e.key),
+            ),
         if (total > 3) ...[
           const SizedBox(height: 4),
-          _ViewAllProjectsBanner(
-              remaining: total - 3, onTap: () => Get.toNamed(AppRoutes.myProjects)),
+          _ViewAllProjectsBanner(remaining: total - 3),
         ],
       ],
     );
   }
 }
 
-class _ProjectCard extends StatelessWidget {
+class _ProjectCard extends StatefulWidget {
   final ProjectModel project;
-  const _ProjectCard({required this.project});
+  final int index;
+  const _ProjectCard({required this.project, required this.index});
+
+  @override
+  State<_ProjectCard> createState() => _ProjectCardState();
+}
+
+class _ProjectCardState extends State<_ProjectCard> {
+  bool _pressed = false;
 
   Color _statusColor(String status) => switch (status) {
         'active'    => _kInfo,
@@ -460,154 +488,218 @@ class _ProjectCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs      = Theme.of(context).colorScheme;
-    final divider = Theme.of(context).dividerColor;
-    final statusColor = _statusColor(project.status);
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
+    final accent  = _kCardAccents[widget.index % _kCardAccents.length];
+    final statusColor = _statusColor(widget.project.status);
+
+    // Subtle tinted gradient — very low opacity to stay premium, not loud
+    final gradientStart = isDark
+        ? Color.lerp(cs.surface, accent, 0.10)!
+        : Color.lerp(Colors.white, accent, 0.07)!;
+    final gradientEnd = isDark
+        ? Color.lerp(cs.surface, accent, 0.04)!
+        : Color.lerp(Colors.white, accent, 0.02)!;
 
     return GestureDetector(
-      onTap: () =>
-          Get.toNamed(AppRoutes.projectStageTracker, arguments: project),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-                color: cs.onSurface.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        Get.toNamed(AppRoutes.projectStageTracker, arguments: widget.project);
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [gradientStart, gradientEnd],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            // Uniform border required when borderRadius is set
+            border: Border.all(
+              color: accent.withValues(alpha: isDark ? 0.18 : 0.12),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: isDark ? 0.14 : 0.09),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(15),
+            child: Stack(
               children: [
-                // Icon
-                Container(
-                  width: 40, height: 40,
-                  decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.home_work_rounded,
-                      size: 20, color: cs.primary),
-                ),
-                const SizedBox(width: 12),
-
-                // Name + location
-                Expanded(
+                Padding(
+                  padding: const EdgeInsets.all(14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(project.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: cs.onSurface)),
-                      const SizedBox(height: 1),
                       Row(
                         children: [
-                          Icon(Icons.location_on_outlined,
-                              size: 10, color: cs.onSurfaceVariant),
-                          const SizedBox(width: 2),
+                          // Project icon tinted with card accent
+                          Container(
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(
+                              color: accent.withValues(
+                                  alpha: isDark ? 0.20 : 0.11),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(Icons.home_work_rounded,
+                                size: 20, color: accent),
+                          ),
+                          const SizedBox(width: 12),
+
+                          // Name + location
                           Expanded(
-                            child: Text(
-                              '${project.area}, ${project.city}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
-                                  fontSize: 10.5,
-                                  color: cs.onSurfaceVariant),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(widget.project.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: cs.onSurface)),
+                                const SizedBox(height: 1),
+                                Row(
+                                  children: [
+                                    Icon(Icons.location_on_outlined,
+                                        size: 10,
+                                        color: cs.onSurfaceVariant),
+                                    const SizedBox(width: 2),
+                                    Expanded(
+                                      child: Text(
+                                        '${widget.project.area}, ${widget.project.city}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.inter(
+                                            fontSize: 10.5,
+                                            color: cs.onSurfaceVariant),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Status badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(widget.project.statusLabel,
+                                style: GoogleFonts.inter(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: statusColor)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Progress row — bar uses card accent color
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text('Progress',
+                                        style: GoogleFonts.inter(
+                                            fontSize: 10,
+                                            color: cs.onSurfaceVariant)),
+                                    const Spacer(),
+                                    Text(
+                                      '${widget.project.completionPct.toStringAsFixed(0)}%',
+                                      style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: accent),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(100),
+                                  child: LinearProgressIndicator(
+                                    value: widget.project.progress,
+                                    minHeight: 5,
+                                    backgroundColor: accent.withValues(
+                                        alpha: isDark ? 0.20 : 0.12),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        accent),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
+                      const SizedBox(height: 10),
 
-                // Status badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(project.statusLabel,
-                      style: GoogleFonts.inter(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: statusColor)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Progress row
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                      // Budget + stage + time left
                       Row(
                         children: [
-                          Text('Progress',
-                              style: GoogleFonts.inter(
-                                  fontSize: 10, color: cs.onSurfaceVariant)),
+                          _InfoChip(
+                            icon: Icons.account_balance_wallet_outlined,
+                            label: CurrencyFormatter.formatPKR(
+                                widget.project.budgetAmount),
+                            color: cs.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          _InfoChip(
+                            icon: Icons.construction_rounded,
+                            label: widget.project.currentStage,
+                            color: cs.onSurfaceVariant,
+                          ),
                           const Spacer(),
-                          Text('${project.completionPct.toStringAsFixed(0)}%',
+                          Text('${widget.project.weeksLeft}w left',
                               style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: cs.onSurface)),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                  color: widget.project.isLate
+                                      ? _kError
+                                      : cs.onSurfaceVariant)),
                         ],
-                      ),
-                      const SizedBox(height: 4),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(100),
-                        child: LinearProgressIndicator(
-                          value: project.progress,
-                          minHeight: 5,
-                          backgroundColor: divider,
-                          valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
-                        ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 10),
 
-            // Budget + stage + updated
-            Row(
-              children: [
-                _InfoChip(
-                  icon: Icons.account_balance_wallet_outlined,
-                  label: CurrencyFormatter.formatPKR(project.budgetAmount),
-                  color: cs.onSurfaceVariant,
+                // Left accent strip — separate element avoids non-uniform
+                // border colors which are forbidden with borderRadius
+                Positioned(
+                  left: 0, top: 0, bottom: 0,
+                  child: Container(
+                    width: 3.5,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(
+                          alpha: isDark ? 0.65 : 0.50),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(15),
+                        bottomLeft: Radius.circular(15),
+                      ),
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 8),
-                _InfoChip(
-                  icon: Icons.construction_rounded,
-                  label: project.currentStage,
-                  color: cs.onSurfaceVariant,
-                ),
-                const Spacer(),
-                Text('${project.weeksLeft}w left',
-                    style: GoogleFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                        color: project.isLate ? _kError : cs.onSurfaceVariant)),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -635,15 +727,13 @@ class _InfoChip extends StatelessWidget {
 
 class _ViewAllProjectsBanner extends StatelessWidget {
   final int remaining;
-  final VoidCallback onTap;
-  const _ViewAllProjectsBanner(
-      {required this.remaining, required this.onTap});
+  const _ViewAllProjectsBanner({required this.remaining});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return GestureDetector(
-      onTap: onTap,
+      onTap: _goToProjectsTab,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 11),

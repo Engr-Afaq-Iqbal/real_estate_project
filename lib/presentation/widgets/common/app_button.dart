@@ -436,9 +436,13 @@ class _ButtonContent extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (leading != null) ...[leading!, const SizedBox(width: 8)],
-        Text(
-          label,
-          style: AppTextStyles.buttonLarge().copyWith(color: color),
+        Flexible(
+          child: Text(
+            label,
+            style: AppTextStyles.buttonLarge().copyWith(color: color),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
         ),
         if (trailing != null) ...[const SizedBox(width: 8), trailing!],
       ],

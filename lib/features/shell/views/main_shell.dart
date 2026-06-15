@@ -7,6 +7,7 @@ import '../../../presentation/widgets/layout/bottom_nav_bar.dart';
 import '../../dashboard/views/homeowner_dashboard_screen.dart';
 import '../../dashboard/views/developer_dashboard_screen.dart';
 import '../../projects/views/my_projects_screen.dart';
+import '../../teams/views/team_dashboard_screen.dart';
 import '../../settings/views/settings_screen.dart';
 
 class MainShell extends GetView<ShellController> {
@@ -36,15 +37,21 @@ class MainShell extends GetView<ShellController> {
     });
   }
 
+  // Customer: 3 tabs — Home(0) · Projects(1) · Settings(2)
   static const _homeownerScreens = [
     HomeownerDashboardScreen(),
     MyProjectsScreen(),
     SettingsScreen(),
   ];
 
+  // Contractor: 4 tabs — Home(0) · Projects(1) · Teams(2) · Settings(3)
+  // TeamDashboardScreen is only reachable when role == 'developer'.
+  // TeamController is only registered in AppBinding for the developer role,
+  // so customer sessions can never access team data even via deep-links.
   static const _developerScreens = [
     DeveloperDashboardScreen(),
     MyProjectsScreen(),
+    TeamDashboardScreen(),
     SettingsScreen(),
   ];
 }

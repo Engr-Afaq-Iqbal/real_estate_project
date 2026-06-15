@@ -12,9 +12,20 @@ const _kBorder   = Color(0xFFF0F2F5);
 class AppBottomNavBar extends GetView<ShellController> {
   const AppBottomNavBar({super.key});
 
-  static const _tabs = [
+  // Customer tabs — 3 entries, indices 0-2
+  static const _customerTabs = [
     (Icons.home_outlined,        Icons.home_rounded,       'Home'),
     (Icons.folder_open_outlined, Icons.folder_rounded,     'Projects'),
+    (Icons.settings_outlined,    Icons.settings_rounded,   'Settings'),
+  ];
+
+  // Contractor tabs — 4 entries, indices 0-3
+  // Teams tab is at index 2; Settings moves to index 3.
+  // Customers never see this list — role is read from ShellController.
+  static const _contractorTabs = [
+    (Icons.home_outlined,        Icons.home_rounded,       'Home'),
+    (Icons.folder_open_outlined, Icons.folder_rounded,     'Projects'),
+    (Icons.groups_outlined,      Icons.groups_rounded,     'Teams'),
     (Icons.settings_outlined,    Icons.settings_rounded,   'Settings'),
   ];
 
@@ -29,10 +40,13 @@ class AppBottomNavBar extends GetView<ShellController> {
         top: false,
         child: SizedBox(
           height: 62,
-          child: Obx(
-            () => Row(
-              children: List.generate(_tabs.length, (i) {
-                final (icon, activeIcon, label) = _tabs[i];
+          child: Obx(() {
+            final tabs = controller.isDeveloper
+                ? _contractorTabs
+                : _customerTabs;
+            return Row(
+              children: List.generate(tabs.length, (i) {
+                final (icon, activeIcon, label) = tabs[i];
                 return _NavItem(
                   icon: icon,
                   activeIcon: activeIcon,
@@ -42,8 +56,8 @@ class AppBottomNavBar extends GetView<ShellController> {
                   onTap: () => controller.changeTab(i),
                 );
               }),
-            ),
-          ),
+            );
+          }),
         ),
       ),
     );

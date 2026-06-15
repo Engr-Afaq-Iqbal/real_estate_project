@@ -65,6 +65,13 @@ import '../../features/calculator/views/material_cost_calculator_screen.dart';
 import '../../features/calculator/views/floor_plan_estimator_screen.dart';
 import '../../features/market/views/market_prices_screen.dart';
 
+// Teams (Contractor only)
+import '../../features/teams/bindings/team_binding.dart';
+import '../../features/teams/views/team_dashboard_screen.dart';
+import '../../features/teams/views/team_detail_screen.dart';
+import '../../features/teams/views/create_team_wizard_screen.dart';
+import '../../features/teams/views/add_worker_screen.dart';
+
 // Tasks
 import '../../features/tasks/bindings/tasks_binding.dart';
 import '../../features/tasks/views/tasks_screen.dart';
@@ -289,6 +296,32 @@ class AppPages {
       name: AppRoutes.marketPrices,
       page: () => const MarketPricesScreen(),
       transition: Transition.rightToLeft,
+    ),
+
+    // ── Teams (Contractor only) ──────────────────────────────────────────────
+    GetPage(
+      name: AppRoutes.teamDashboard,
+      page: () => const TeamDashboardScreen(),
+      binding: TeamBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.teamDetail,
+      page: () => const TeamDetailScreen(),
+      binding: TeamBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.createTeam,
+      page: () => const CreateTeamWizardScreen(),
+      binding: TeamBinding(),
+      transition: Transition.downToUp,
+    ),
+    GetPage(
+      name: AppRoutes.addWorker,
+      page: () => const AddWorkerScreen(),
+      binding: TeamBinding(),
+      transition: Transition.downToUp,
     ),
 
     // ── Tasks ───────────────────────────────────────────────────────────────

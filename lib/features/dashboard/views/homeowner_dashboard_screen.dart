@@ -11,8 +11,12 @@ import '../widgets/dashboard_market_prices_widget.dart';
 // Feature temporarily disabled. Quick Estimator widget preserved for future
 // implementation (see dashboard_quick_stats_widget.dart).
 // import '../widgets/dashboard_quick_stats_widget.dart';
-import '../widgets/dashboard_project_highlight_card.dart';
-import '../widgets/dashboard_portfolio_widget.dart';
+// Active Project hero card removed from the Customer Dashboard.
+// Widget preserved in dashboard_project_highlight_card.dart for future use.
+// import '../widgets/dashboard_project_highlight_card.dart';
+// Portfolio Overview moved to the Contractor Dashboard
+// (developer_dashboard_screen.dart).
+// import '../widgets/dashboard_portfolio_widget.dart';
 import '../widgets/dashboard_recent_activity_widget.dart';
 
 /// Homeowner dashboard — composes extracted sub-widgets.
@@ -95,26 +99,28 @@ class HomeownerDashboardScreen extends GetView<DashboardController> {
                         // ),
                         // const SizedBox(height: 20),
 
-                        // Hero project card
-                        if (controller.primaryProject != null) ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: DashboardProjectHighlightCard(
-                                project: controller.primaryProject!),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
+                        // Active Project hero card removed from the Customer
+                        // Dashboard. Preserved for future use.
+                        // if (controller.primaryProject != null) ...[
+                        //   Padding(
+                        //     padding: const EdgeInsets.symmetric(horizontal: 16),
+                        //     child: DashboardProjectHighlightCard(
+                        //         project: controller.primaryProject!),
+                        //   ),
+                        //   const SizedBox(height: 20),
+                        // ],
 
-                        // Portfolio overview (2+ projects)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: DashboardPortfolioWidget(
-                              controller: controller),
-                        ),
-                        if (controller.activeProjects.length >= 2)
-                          const SizedBox(height: 20),
+                        // Portfolio Overview moved to the Contractor
+                        // Dashboard (developer_dashboard_screen.dart).
+                        // Padding(
+                        //   padding: const EdgeInsets.symmetric(horizontal: 16),
+                        //   child: DashboardPortfolioWidget(
+                        //       controller: controller),
+                        // ),
+                        // if (controller.activeProjects.length >= 2)
+                        //   const SizedBox(height: 20),
 
-                        // Tasks, budget alerts, active projects
+                        // My Projects (kept as the final dashboard section)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: DashboardRecentActivityWidget(
