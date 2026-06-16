@@ -67,7 +67,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Scaffold(
         body: NestedScrollView(
           headerSliverBuilder: (context, _) => [
@@ -80,6 +80,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> {
                 child: TabBarView(
                   children: [
                     _WorkersTab(team: _team, accent: _accent),
+                    _ThekedarTab(team: _team, accent: _accent),
                     _AttendanceTab(ctrl: _attCtrl, accent: _accent),
                     _AssignmentsTab(team: _team, accent: _accent),
                     _LaborCostTab(ctrl: _attCtrl, accent: _accent),
@@ -316,6 +317,7 @@ class _TabBar extends StatelessWidget {
         tabAlignment: TabAlignment.start,
         tabs: const [
           Tab(text: 'Workers'),
+          Tab(text: 'Thekedar'),
           Tab(text: 'Attendance'),
           Tab(text: 'Assignments'),
           Tab(text: 'Labor Cost'),
@@ -2600,6 +2602,821 @@ class _ComingSoonTab extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Thekedar tab ──────────────────────────────────────────────────────────────
+
+const _kThekedarViolet = Color(0xFF7C3AED);
+const _kThekedarError  = Color(0xFFEF4444);
+const _kThekedarGreen  = Color(0xFF16A34A);
+
+class _TeamThekedarEntry {
+  final String name;
+  final String workType;
+  final String rateType;
+  final double rateAmount;
+  final String workAssigned;
+  final String paymentTerms;
+  final double advancePaid;
+  final double totalEstimate;
+
+  const _TeamThekedarEntry({
+    required this.name,
+    required this.workType,
+    required this.rateType,
+    required this.rateAmount,
+    required this.workAssigned,
+    required this.paymentTerms,
+    required this.advancePaid,
+    required this.totalEstimate,
+  });
+
+  double get balanceDue => totalEstimate - advancePaid;
+}
+
+class _ThekedarTab extends StatefulWidget {
+  final TeamModel team;
+  final Color accent;
+
+  const _ThekedarTab({required this.team, required this.accent});
+
+  @override
+  State<_ThekedarTab> createState() => _ThekedarTabState();
+}
+
+class _ThekedarTabState extends State<_ThekedarTab> {
+  final _thekedars = <_TeamThekedarEntry>[
+    const _TeamThekedarEntry(
+      name: 'Ustad Bashir Ahmed',
+      workType: 'Brickwork',
+      rateType: 'Per 1000 Bricks',
+      rateAmount: 1800,
+      workAssigned: 'Ground floor boundary wall + columns',
+      paymentTerms: 'Milestone-Based',
+      advancePaid: 30000,
+      totalEstimate: 120000,
+    ),
+  ];
+
+  static const _workTypes = [
+    'Brickwork', 'Concrete', 'Plastering', 'Tiling',
+    'Electrical', 'Plumbing', 'Full Labour Contract',
+  ];
+  static const _rateTypes = [
+    'Per 1000 Bricks', 'Per Cubic Ft', 'Per Sq Ft', 'Lump Sum',
+  ];
+  static const _payTerms = [
+    'Daily', 'Weekly', 'On Completion', 'Milestone-Based',
+  ];
+
+  void _openForm(BuildContext context) {
+    String workType = _workTypes[0];
+    String rateType = _rateTypes[0];
+    String payTerm  = _payTerms[3];
+    final nameCtrl  = TextEditingController();
+    final workCtrl  = TextEditingController();
+    final rateCtrl  = TextEditingController();
+    final totalCtrl = TextEditingController();
+    final advCtrl   = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (_, setSheet) {
+          final cs     = Theme.of(sheetCtx).colorScheme;
+          final isDark = Theme.of(sheetCtx).brightness == Brightness.dark;
+          final accent = widget.accent;
+
+          final totalVal = double.tryParse(totalCtrl.text) ?? 0;
+          final advVal   = double.tryParse(advCtrl.text) ?? 0;
+          final balance  = totalVal - advVal;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: EdgeInsets.fromLTRB(
+                20, 12, 20, MediaQuery.of(sheetCtx).viewInsets.bottom + 28),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Drag handle
+                  Center(
+                    child: Container(
+                      width: 40, height: 4,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+
+                  Text('Add Thekedar',
+                      style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: cs.onSurface)),
+                  Text('Subcontractor / Specialized Contractor',
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: cs.onSurfaceVariant)),
+                  const SizedBox(height: 20),
+
+                  _TField(
+                    label: 'Thekedar Name',
+                    hint: 'e.g. Ustad Malik',
+                    ctrl: nameCtrl,
+                    accent: accent,
+                  ),
+                  const SizedBox(height: 14),
+
+                  _TChipSelector(
+                    label: 'Work Type',
+                    options: _workTypes,
+                    current: workType,
+                    accent: accent,
+                    onSelect: (v) => setSheet(() => workType = v),
+                  ),
+                  const SizedBox(height: 14),
+
+                  _TChipSelector(
+                    label: 'Rate Type',
+                    options: _rateTypes,
+                    current: rateType,
+                    accent: accent,
+                    onSelect: (v) => setSheet(() => rateType = v),
+                  ),
+                  const SizedBox(height: 14),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _TField(
+                          label: 'Rate (PKR)',
+                          hint: 'e.g. 1800',
+                          ctrl: rateCtrl,
+                          accent: accent,
+                          isNumber: true,
+                          onChanged: (_) => setSheet(() {}),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _TField(
+                          label: 'Total Estimate (PKR)',
+                          hint: 'e.g. 120000',
+                          ctrl: totalCtrl,
+                          accent: accent,
+                          isNumber: true,
+                          onChanged: (_) => setSheet(() {}),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  _TField(
+                    label: 'Work Assigned',
+                    hint: 'Describe the scope of work...',
+                    ctrl: workCtrl,
+                    accent: accent,
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 14),
+
+                  _TChipSelector(
+                    label: 'Payment Terms',
+                    options: _payTerms,
+                    current: payTerm,
+                    accent: accent,
+                    onSelect: (v) => setSheet(() => payTerm = v),
+                  ),
+                  const SizedBox(height: 14),
+
+                  _TField(
+                    label: 'Advance Paid (PKR)',
+                    hint: '0',
+                    ctrl: advCtrl,
+                    accent: accent,
+                    isNumber: true,
+                    onChanged: (_) => setSheet(() {}),
+                  ),
+
+                  if (totalCtrl.text.isNotEmpty || advCtrl.text.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: (balance > 0 ? _kThekedarError : _kThekedarGreen)
+                            .withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: (balance > 0
+                                  ? _kThekedarError
+                                  : _kThekedarGreen)
+                              .withValues(alpha: 0.20),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            balance > 0
+                                ? Icons.account_balance_wallet_rounded
+                                : Icons.check_circle_rounded,
+                            size: 14,
+                            color: balance > 0
+                                ? _kThekedarError
+                                : _kThekedarGreen,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Balance Due: ${CurrencyFormatter.formatPKR(balance)}',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: balance > 0
+                                  ? _kThekedarError
+                                  : _kThekedarGreen,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (nameCtrl.text.trim().isEmpty) {
+                          Get.snackbar(
+                            'Required', 'Please enter the thekedar name',
+                            snackPosition: SnackPosition.BOTTOM,
+                            margin: const EdgeInsets.all(16),
+                            duration: const Duration(seconds: 2),
+                          );
+                          return;
+                        }
+                        setState(() {
+                          _thekedars.insert(
+                            0,
+                            _TeamThekedarEntry(
+                              name: nameCtrl.text.trim(),
+                              workType: workType,
+                              rateType: rateType,
+                              rateAmount:
+                                  double.tryParse(rateCtrl.text) ?? 0,
+                              workAssigned: workCtrl.text.trim(),
+                              paymentTerms: payTerm,
+                              advancePaid:
+                                  double.tryParse(advCtrl.text) ?? 0,
+                              totalEstimate:
+                                  double.tryParse(totalCtrl.text) ?? 0,
+                            ),
+                          );
+                        });
+                        Navigator.of(sheetCtx).pop();
+                        Get.snackbar(
+                          'Thekedar Added',
+                          '${nameCtrl.text.trim()} has been added to the team.',
+                          snackPosition: SnackPosition.BOTTOM,
+                          margin: const EdgeInsets.all(16),
+                          duration: const Duration(seconds: 2),
+                          backgroundColor:
+                              _kThekedarGreen.withValues(alpha: 0.90),
+                          colorText: Colors.white,
+                          icon: const Icon(Icons.check_circle_rounded,
+                              color: Colors.white, size: 18),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text('Save Thekedar',
+                          style: GoogleFonts.inter(
+                              fontSize: 14, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs     = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = widget.accent;
+
+    return Stack(
+      children: [
+        ListView(
+          padding: const EdgeInsets.fromLTRB(
+              AppDimensions.pagePaddingH, AppDimensions.pagePaddingH,
+              AppDimensions.pagePaddingH, 100),
+          children: [
+            // Header row
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${_thekedars.length} Thekedar${_thekedars.length == 1 ? '' : 's'}',
+                          style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: cs.onSurface)),
+                      Text('Subcontractors & Specialized Teams',
+                          style: GoogleFonts.inter(
+                              fontSize: 11, color: cs.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _openForm(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: accent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.engineering_rounded,
+                            size: 14, color: Colors.white),
+                        const SizedBox(width: 5),
+                        Text('Add Thekedar',
+                            style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // Info banner
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: accent.withValues(alpha: 0.15)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded,
+                      size: 16, color: accent),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Thekedars are subcontractors who manage specific scopes of work independently from daily wage workers.',
+                      style: GoogleFonts.inter(
+                          fontSize: 11, color: cs.onSurfaceVariant, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            if (_thekedars.isEmpty)
+              _ThekedarEmptyState(accent: accent)
+            else
+              ..._thekedars.map((t) =>
+                  _TeamThekedarCard(entry: t, accent: accent, isDark: isDark)),
+          ],
+        ),
+
+        // Floating action button
+        Positioned(
+          right: 16,
+          bottom: 24,
+          child: FloatingActionButton.extended(
+            onPressed: () => _openForm(context),
+            backgroundColor: accent,
+            foregroundColor: Colors.white,
+            elevation: 4,
+            icon: const Icon(Icons.engineering_rounded, size: 20),
+            label: Text('Add Thekedar',
+                style: GoogleFonts.inter(
+                    fontSize: 13, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Thekedar card ─────────────────────────────────────────────────────────────
+
+class _TeamThekedarCard extends StatelessWidget {
+  final _TeamThekedarEntry entry;
+  final Color accent;
+  final bool isDark;
+
+  const _TeamThekedarCard({
+    required this.entry,
+    required this.accent,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? cs.surfaceContainerHighest : cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+            color: _kThekedarViolet.withValues(alpha: isDark ? 0.22 : 0.14),
+            width: 1),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  color: _kThekedarViolet.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: _kThekedarViolet.withValues(alpha: 0.22),
+                      width: 1),
+                ),
+                child: const Icon(Icons.engineering_rounded,
+                    color: _kThekedarViolet, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(entry.name,
+                        style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: cs.onSurface)),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _kThekedarViolet.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(entry.workType,
+                              style: GoogleFonts.inter(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                  color: _kThekedarViolet)),
+                        ),
+                        const SizedBox(width: 6),
+                        Text('· ${entry.paymentTerms}',
+                            style: GoogleFonts.inter(
+                                fontSize: 10,
+                                color: cs.onSurfaceVariant)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Active status badge
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _kThekedarGreen.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 5, height: 5,
+                      decoration: const BoxDecoration(
+                        color: _kThekedarGreen,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text('Active',
+                        style: GoogleFonts.inter(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: _kThekedarGreen)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          if (entry.workAssigned.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(entry.workAssigned,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: cs.onSurfaceVariant,
+                    height: 1.4)),
+          ],
+
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _TAmountChip(
+                  label: 'Rate',
+                  value:
+                      '${CurrencyFormatter.formatPKR(entry.rateAmount)}/${entry.rateType.split(' ').last}',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _TAmountChip(
+                  label: 'Advance',
+                  value: CurrencyFormatter.formatPKR(entry.advancePaid),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _TAmountChip(
+                  label: 'Balance',
+                  value: CurrencyFormatter.formatPKR(entry.balanceDue),
+                  valueColor: entry.balanceDue > 0
+                      ? _kThekedarError
+                      : _kThekedarGreen,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Thekedar empty state ──────────────────────────────────────────────────────
+
+class _ThekedarEmptyState extends StatelessWidget {
+  final Color accent;
+  const _ThekedarEmptyState({required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 72, height: 72,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.10),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.engineering_rounded, size: 34, color: accent),
+          ),
+          const SizedBox(height: 16),
+          Text('No Thekedars Yet',
+              style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface)),
+          const SizedBox(height: 8),
+          Text(
+            'Add subcontractors and specialized teams\nthat work on specific scopes within this team.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+                fontSize: 12, color: cs.onSurfaceVariant, height: 1.5),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: accent.withValues(alpha: 0.20)),
+            ),
+            child: Text('Tap "Add Thekedar" to get started',
+                style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: accent)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Thekedar form helpers (scoped to Teams module) ────────────────────────────
+
+class _TAmountChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  const _TAmountChip({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: (valueColor ?? cs.primary).withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+            color: (valueColor ?? cs.outlineVariant)
+                .withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                  fontSize: 9, color: cs.onSurfaceVariant)),
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(value,
+                style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: valueColor ?? cs.onSurface)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TField extends StatelessWidget {
+  final String label;
+  final String hint;
+  final TextEditingController ctrl;
+  final Color accent;
+  final bool isNumber;
+  final int maxLines;
+  final ValueChanged<String>? onChanged;
+
+  const _TField({
+    required this.label,
+    required this.hint,
+    required this.ctrl,
+    required this.accent,
+    this.isNumber = false,
+    this.maxLines = 1,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurfaceVariant)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: ctrl,
+          maxLines: maxLines,
+          onChanged: onChanged,
+          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          style: GoogleFonts.inter(fontSize: 13),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.inter(
+                fontSize: 13, color: cs.onSurfaceVariant),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: accent, width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 10),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TChipSelector extends StatelessWidget {
+  final String label;
+  final List<String> options;
+  final String current;
+  final Color accent;
+  final ValueChanged<String> onSelect;
+
+  const _TChipSelector({
+    required this.label,
+    required this.options,
+    required this.current,
+    required this.accent,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: options.map((o) {
+            final selected = o == current;
+            return GestureDetector(
+              onTap: () => onSelect(o),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: selected ? accent : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: selected
+                        ? accent
+                        : cs.outlineVariant,
+                  ),
+                ),
+                child: Text(o,
+                    style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                        color: selected
+                            ? Colors.white
+                            : cs.onSurfaceVariant)),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

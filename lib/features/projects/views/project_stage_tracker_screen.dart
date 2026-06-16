@@ -17,6 +17,9 @@ import '../../../presentation/widgets/common/app_badge.dart';
 import '../../../presentation/widgets/common/app_button.dart';
 import '../../../presentation/routes/app_routes.dart';
 import '../../../presentation/widgets/common/animated_counter.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../../teams/controllers/team_controller.dart';
+import '../../teams/data/models/team_model.dart';
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -44,11 +47,45 @@ String _fmtDate(DateTime dt) {
 // Main Screen
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ── Workforce visibility modes ─────────────────────────────────────────────────
+
+enum _WorkforceMode {
+  /// Contractor user: show Teams tab (project-assigned teams only).
+  teams,
+  /// Owner/developer + self-managed: show Labor tab.
+  labor,
+  /// Owner/developer + contractor-managed: hide workforce section entirely.
+  none,
+}
+
+_WorkforceMode _resolveWorkforceMode(dynamic project) {
+  final auth = Get.isRegistered<AuthController>()
+      ? Get.find<AuthController>()
+      : null;
+  final user = auth?.currentUser.value;
+
+  // Contractor users always see their Teams, never Labor.
+  if (user != null && user.isContractor) return _WorkforceMode.teams;
+
+  // Developer / homeowner: depends on project execution type.
+  final ct = (project.contractorType as String?) ?? 'self';
+  if (ct == 'self') return _WorkforceMode.labor;
+
+  // 'local' or 'company' — workforce is managed by the contractor.
+  return _WorkforceMode.none;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Main Screen
+// ═══════════════════════════════════════════════════════════════════════════════
+
 class ProjectStageTrackerScreen extends GetView<ProjectsController> {
   const ProjectStageTrackerScreen({super.key});
 
   // PK2: Thekedar is in Labor tab  PK3: Permits is 7th tab
-  static const _tabs = ['Stages', 'Updates', 'Budget', 'Labor', 'Photos', 'Materials', 'Permits'];
+  // Static base tabs — workforce tab injected dynamically by _resolveWorkforceMode.
+  static const _basePre  = ['Stages', 'Updates', 'Budget'];
+  static const _basePost = ['Photos', 'Materials', 'Permits'];
 
   @override
   Widget build(BuildContext context) {
@@ -60,8 +97,39 @@ class ProjectStageTrackerScreen extends GetView<ProjectsController> {
       );
     }
 
+    final wMode = _resolveWorkforceMode(project);
+
+    // Build tab labels and tab views in lock-step so lengths always match.
+    final tabLabels = <String>[..._basePre];
+    final tabViews  = <Widget>[
+      _StagesList(project: project),
+      _UpdatesTab(project: project),
+      _BudgetTab(project: project),
+    ];
+
+    switch (wMode) {
+      case _WorkforceMode.labor:
+        tabLabels.add('Labor');
+        tabViews.add(_LaborTab(project: project)); // PK2: thekedar mode
+        break;
+      case _WorkforceMode.teams:
+        tabLabels.add('Teams');
+        tabViews.add(_ProjectTeamsTab(project: project));
+        break;
+      case _WorkforceMode.none:
+        // No workforce tab — nothing added.
+        break;
+    }
+
+    tabLabels.addAll(_basePost);
+    tabViews.addAll([
+      _PhotosTab(project: project),
+      _MaterialsTab(project: project),
+      _PermitsTab(project: project), // PK3
+    ]);
+
     return DefaultTabController(
-      length: _tabs.length, // 7 tabs
+      length: tabLabels.length,
       child: Scaffold(
         body: NestedScrollView(
           headerSliverBuilder: (_, __) => [
@@ -140,21 +208,11 @@ class ProjectStageTrackerScreen extends GetView<ProjectsController> {
               ],
               bottom: TabBar(
                 isScrollable: true,
-                tabs: _tabs.map((t) => Tab(text: t)).toList(),
+                tabs: tabLabels.map((t) => Tab(text: t)).toList(),
               ),
             ),
           ],
-          body: TabBarView(
-            children: [
-              _StagesList(project: project),
-              _UpdatesTab(project: project),
-              _BudgetTab(project: project),
-              _LaborTab(project: project),             // PK2: thekedar mode
-              _PhotosTab(project: project),
-              _MaterialsTab(project: project),
-              _PermitsTab(project: project),           // PK3
-            ],
-          ),
+          body: TabBarView(children: tabViews),
         ),
         bottomNavigationBar: Container(
           padding: const EdgeInsets.all(AppDimensions.pagePaddingH),
@@ -4362,4 +4420,308 @@ class _ImagePlaceholderState extends State<_ImagePlaceholder>
           color: Colors.grey.withValues(alpha: _anim.value),
         ),
       );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PK4: Project Teams tab — visible to contractor users
+// Shows only the teams explicitly assigned to this project.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+Color _ptAccent(TeamType t) => switch (t) {
+      TeamType.structural  => const Color(0xFFF97316),
+      TeamType.finishing   => const Color(0xFF22C55E),
+      TeamType.electrical  => const Color(0xFFEAB308),
+      TeamType.plumbing    => const Color(0xFF3B82F6),
+      TeamType.general     => const Color(0xFF6B7280),
+      TeamType.specialized => const Color(0xFF8B5CF6),
+    };
+
+IconData _ptIcon(TeamType t) => switch (t) {
+      TeamType.structural  => Icons.foundation_rounded,
+      TeamType.finishing   => Icons.format_paint_rounded,
+      TeamType.electrical  => Icons.electric_bolt_rounded,
+      TeamType.plumbing    => Icons.water_drop_rounded,
+      TeamType.general     => Icons.construction_rounded,
+      TeamType.specialized => Icons.precision_manufacturing_rounded,
+    };
+
+class _ProjectTeamsTab extends StatelessWidget {
+  final dynamic project;
+  const _ProjectTeamsTab({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    // Register TeamController lazily if not already registered.
+    final tc = Get.isRegistered<TeamController>()
+        ? Get.find<TeamController>()
+        : Get.put(TeamController());
+
+    return Obx(() {
+      if (tc.isLoading.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      final projectId = project.id as String;
+      final assigned  = tc.teams
+          .where((t) => t.assignedProjectIds.contains(projectId))
+          .toList();
+
+      if (assigned.isEmpty) {
+        return _PtEmptyState();
+      }
+
+      return ListView.builder(
+        padding: const EdgeInsets.all(AppDimensions.pagePaddingH),
+        itemCount: assigned.length + 1,
+        itemBuilder: (context, i) {
+          if (i == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${assigned.length} Team${assigned.length == 1 ? '' : 's'} Assigned',
+                          style: AppTextStyles.h4(context),
+                        ),
+                        Text(
+                          'Teams responsible for this project',
+                          style: AppTextStyles.caption(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          return _PtTeamCard(team: assigned[i - 1]);
+        },
+      );
+    });
+  }
+}
+
+class _PtTeamCard extends StatelessWidget {
+  final TeamModel team;
+  const _PtTeamCard({required this.team});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs     = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = _ptAccent(team.type);
+
+    return GestureDetector(
+      onTap: () => Get.toNamed(AppRoutes.teamDetail, arguments: team),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isDark ? cs.surfaceContainerHighest : cs.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+              color: accent.withValues(alpha: isDark ? 0.22 : 0.15), width: 1),
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  width: 44, height: 44,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: accent.withValues(alpha: 0.25), width: 1),
+                  ),
+                  child: Icon(_ptIcon(team.type), size: 22, color: accent),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(team.name, style: AppTextStyles.h4(context)),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Icon(Icons.person_rounded,
+                              size: 11,
+                              color: cs.onSurfaceVariant),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              team.leaderName,
+                              style: AppTextStyles.caption(context),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Active status badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: team.isActive
+                        ? _kSuccess.withValues(alpha: 0.10)
+                        : _kWarning.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 5, height: 5,
+                        decoration: BoxDecoration(
+                          color: team.isActive ? _kSuccess : _kWarning,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        team.status.label,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: team.isActive ? _kSuccess : _kWarning,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            if ((team.description ?? '').isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                team.description ?? '',
+                style: AppTextStyles.bodySmall(context),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+
+            const SizedBox(height: 12),
+
+            // KPI row
+            Row(
+              children: [
+                _PtKpiChip(
+                  icon: Icons.people_rounded,
+                  label: '${team.workerCount} Workers',
+                  accent: accent,
+                ),
+                const SizedBox(width: 8),
+                _PtKpiChip(
+                  icon: Icons.check_circle_rounded,
+                  label: '${team.activeWorkerCount} Active',
+                  accent: _kSuccess,
+                ),
+                const SizedBox(width: 8),
+                _PtKpiChip(
+                  icon: Icons.category_rounded,
+                  label: team.type.label,
+                  accent: accent,
+                ),
+                const Spacer(),
+                Icon(Icons.chevron_right_rounded,
+                    size: 18, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PtKpiChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color accent;
+  const _PtKpiChip({
+    required this.icon,
+    required this.label,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 11, color: accent),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: accent),
+            ),
+          ],
+        ),
+      );
+}
+
+class _PtEmptyState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72, height: 72,
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.groups_rounded,
+                  size: 34, color: cs.primary),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No Teams Assigned',
+              style: AppTextStyles.h3(context),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No teams have been assigned to this project yet.\nAssign teams from the Teams module.',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.caption(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

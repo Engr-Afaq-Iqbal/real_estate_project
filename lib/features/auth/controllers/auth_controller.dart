@@ -34,7 +34,11 @@ class AuthController extends GetxController {
       final role = LocalStorage.getString(StorageKeys.userRole) ?? 'homeowner';
       final mockUser = UserModel(
         id: 'user_001',
-        name: role == 'homeowner' ? 'Ahmed Khan' : 'Malik Builders',
+        name: role == 'homeowner'
+            ? 'Ahmed Khan'
+            : role == 'contractor'
+                ? 'Malik Contractors'
+                : 'Malik Builders',
         phone: phone,
         email: 'ahmed.khan@gmail.com',
         role: role,

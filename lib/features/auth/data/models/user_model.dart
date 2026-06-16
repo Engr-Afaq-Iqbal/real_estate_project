@@ -39,8 +39,9 @@ class UserModel extends Equatable {
     required this.createdAt,
   });
 
-  bool get isHomeowner => role == 'homeowner';
-  bool get isDeveloper => role == 'developer';
+  bool get isHomeowner  => role == 'homeowner';
+  bool get isDeveloper  => role == 'developer';
+  bool get isContractor => role == 'contractor';
   String get initials {
     final parts = name.trim().split(' ');
     if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
